@@ -2,10 +2,10 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using NUnit.Framework;
-using LMUSharedMemoryTest.Models;
-using LMUSharedMemoryTest.Services;
+using LeMansUltimateCoPilot.Models;
+using LeMansUltimateCoPilot.Services;
 
-namespace LMUSharedMemoryTest.Tests.Services
+namespace LeMansUltimateCoPilot.Tests.Services
 {
     /// <summary>
     /// Unit tests for TelemetryLogger service

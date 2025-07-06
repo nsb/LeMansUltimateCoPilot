@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
-using LMUSharedMemoryTest.Models;
+using LeMansUltimateCoPilot.Models;
 
-namespace LMUSharedMemoryTest.Tests.Models
+namespace LeMansUltimateCoPilot.Tests.Models
 {
     [TestFixture]
     public class ReferenceLapTests

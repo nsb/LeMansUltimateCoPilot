@@ -10,9 +10,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="LMUSharedMemoryTest.Tests\**" />
-    <EmbeddedResource Remove="LMUSharedMemoryTest.Tests\**" />
-    <None Remove="LMUSharedMemoryTest.Tests\**" />
+    <Compile Remove="LeMansUltimateCoPilot.Tests\**" />
+    <EmbeddedResource Remove="LeMansUltimateCoPilot.Tests\**" />
+    <None Remove="LeMansUltimateCoPilot.Tests\**" />
   </ItemGroup>
 
 </Project>

@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
-using LMUSharedMemoryTest.Models;
+using LeMansUltimateCoPilot.Models;
 
-namespace LMUSharedMemoryTest.Tests.Models
+namespace LeMansUltimateCoPilot.Tests.Models
 {
     /// <summary>
     /// Unit tests for EnhancedTelemetryData class

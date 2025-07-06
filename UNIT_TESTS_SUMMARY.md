@@ -20,7 +20,7 @@
 ### Test Categories
 
 #### 1. EnhancedTelemetryData Tests (22 tests)
-**File**: `LMUSharedMemoryTest.Tests/Models/EnhancedTelemetryDataTests.cs`
+**File**: `LeMansUltimateCoPilot.Tests/Models/EnhancedTelemetryDataTests.cs`
 
 **Basic Functionality** (5 tests):
 - ✅ `Constructor_ShouldInitializeWithDefaults`
@@ -55,7 +55,7 @@
 - ✅ `Performance_CSVGenerationShouldBeFast`
 
 #### 2. TelemetryLogger Tests (23 tests)
-**File**: `LMUSharedMemoryTest.Tests/Services/TelemetryLoggerTests.cs`
+**File**: `LeMansUltimateCoPilot.Tests/Services/TelemetryLoggerTests.cs`
 
 **Basic Functionality** (8 tests):
 - ✅ `Constructor_ShouldCreateValidInstance`
@@ -91,7 +91,7 @@
 - ✅ `ConcurrentSessionManagement_ShouldBeThreadSafe`
 
 #### 3. SessionStatistics Tests (5 tests)
-**File**: `LMUSharedMemoryTest.Tests/Services/SessionStatisticsTests.cs`
+**File**: `LeMansUltimateCoPilot.Tests/Services/SessionStatisticsTests.cs`
 
 **Statistics Calculation** (3 tests):
 - ✅ `Constructor_ShouldInitializeWithDefaults`
@@ -148,8 +148,8 @@ The test suite provides comprehensive coverage of:
 ## Test Project Structure
 
 ```
-LMUSharedMemoryTest.Tests/
-├── LMUSharedMemoryTest.Tests.csproj     # NUnit test project configuration
+LeMansUltimateCoPilot.Tests/
+├── LeMansUltimateCoPilot.Tests.csproj     # NUnit test project configuration
 ├── Models/
 │   └── EnhancedTelemetryDataTests.cs    # Tests for telemetry data model (22 tests)
 └── Services/
@@ -249,7 +249,7 @@ With comprehensive unit tests in place for Phase 1.1, the project is ready to pr
 To run the tests:
 
 ```bash
-cd "LMUSharedMemoryTest.Tests"
+cd "LeMansUltimateCoPilot.Tests"
 dotnet test
 ```
 

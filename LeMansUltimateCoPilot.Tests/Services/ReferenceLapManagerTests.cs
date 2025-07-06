@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NUnit.Framework;
-using LMUSharedMemoryTest.Models;
-using LMUSharedMemoryTest.Services;
+using LeMansUltimateCoPilot.Models;
+using LeMansUltimateCoPilot.Services;
 
-namespace LMUSharedMemoryTest.Tests.Services
+namespace LeMansUltimateCoPilot.Tests.Services
 {
     [TestFixture]
     public class ReferenceLapManagerTests

@@ -112,7 +112,7 @@ CSV files include 60+ telemetry fields with metadata:
 ## File Structure
 
 ```
-LMUSharedMemoryTest/
+LeMansUltimateCoPilot/
 ├── Program.cs                 # Main application
 ├── Models/
 │   └── EnhancedTelemetryData.cs   # Comprehensive telemetry data model

@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace LMUSharedMemoryTest.Models
+namespace LeMansUltimateCoPilot.Models
 {
     /// <summary>
     /// Enhanced telemetry data structure for AI driving coach analysis

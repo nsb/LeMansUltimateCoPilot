@@ -1,8 +1,8 @@
 using System;
 using NUnit.Framework;
-using LMUSharedMemoryTest.Services;
+using LeMansUltimateCoPilot.Services;
 
-namespace LMUSharedMemoryTest.Tests.Services
+namespace LeMansUltimateCoPilot.Tests.Services
 {
     /// <summary>
     /// Unit tests for SessionStatistics class

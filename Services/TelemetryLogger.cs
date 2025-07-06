@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using LMUSharedMemoryTest.Models;
+using LeMansUltimateCoPilot.Models;
 
-namespace LMUSharedMemoryTest.Services
+namespace LeMansUltimateCoPilot.Services
 {
     /// <summary>
     /// Enhanced telemetry logging service for AI driving coach

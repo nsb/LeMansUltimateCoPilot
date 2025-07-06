@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using LMUSharedMemoryTest.Models;
+using LeMansUltimateCoPilot.Models;
 
-namespace LMUSharedMemoryTest.Services
+namespace LeMansUltimateCoPilot.Services
 {
     /// <summary>
     /// Service for detecting completed laps from telemetry data stream.

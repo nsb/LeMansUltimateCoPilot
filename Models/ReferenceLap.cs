@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace LMUSharedMemoryTest.Models
+namespace LeMansUltimateCoPilot.Models
 {
     /// <summary>
     /// Represents a reference lap with complete telemetry data and lap metadata.

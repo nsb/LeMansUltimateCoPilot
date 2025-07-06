@@ -2,10 +2,10 @@ using System;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
 using System.Threading;
-using LMUSharedMemoryTest.Models;
-using LMUSharedMemoryTest.Services;
+using LeMansUltimateCoPilot.Models;
+using LeMansUltimateCoPilot.Services;
 
-namespace LMUSharedMemoryTest
+namespace LeMansUltimateCoPilot
 {
     // rFactor2 Telemetry Data Structure (simplified version)
     [StructLayout(LayoutKind.Sequential, Pack = 1)]

@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using LMUSharedMemoryTest.Models;
+using LeMansUltimateCoPilot.Models;
 
-namespace LMUSharedMemoryTest.Services
+namespace LeMansUltimateCoPilot.Services
 {
     /// <summary>
     /// Service for managing reference laps - saving, loading, and organizing reference lap data.
