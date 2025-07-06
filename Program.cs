@@ -149,6 +149,7 @@ namespace LeMansUltimateCoPilot
             Console.WriteLine("  's' - Show session statistics");
             Console.WriteLine("  'p' - Show reference lap statistics");
             Console.WriteLine("  'b' - Save current best lap as reference");
+            Console.WriteLine("  'd' - Run Voice Driving Coach Demo");
             Console.WriteLine();
 
             // Initialize telemetry logger
@@ -297,6 +298,11 @@ namespace LeMansUltimateCoPilot
                         {
                             // Save current best lap as reference (if available)
                             SaveBestLapAsReference();
+                        }
+                        else if (key.KeyChar == 'd' || key.KeyChar == 'D')
+                        {
+                            // Run Voice Driving Coach Demo
+                            RunVoiceCoachDemo();
                         }
                     }
 
@@ -608,6 +614,49 @@ namespace LeMansUltimateCoPilot
                 }
             }
         }
+
+        static void RunVoiceCoachDemo()
+        {
+            Console.Clear();
+            Console.WriteLine("🎯 Running Voice Driving Coach Demo...");
+            Console.WriteLine("=====================================");
+            Console.WriteLine();
+            
+            try
+            {
+                var demo = new VoiceCoachDemo();
+                // Run the demo synchronously
+                demo.RunDemoAsync().GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Demo failed: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            }
+            
+            Console.WriteLine();
+            Console.WriteLine("Demo completed. Press any key to return to main menu...");
+            Console.ReadKey();
+            Console.Clear();
+            
+            // Redisplay the main menu
+            Console.WriteLine("rFactor2 / Le Mans Ultimate Shared Memory Reader & AI Driving Coach");
+            Console.WriteLine("====================================================================");
+            Console.WriteLine("Enhanced telemetry logging for AI-assisted driving analysis");
+            Console.WriteLine("Make sure Le Mans Ultimate is running with an active session!");
+            Console.WriteLine();
+            Console.WriteLine("Controls:");
+            Console.WriteLine("  'q' - Quit application");
+            Console.WriteLine("  'r' - Reconnect to shared memory");
+            Console.WriteLine("  'l' - Start/Stop telemetry logging");
+            Console.WriteLine("  's' - Show session statistics");
+            Console.WriteLine("  'p' - Show reference lap statistics");
+            Console.WriteLine("  'b' - Save current best lap as reference");
+            Console.WriteLine("  'd' - Run Voice Driving Coach Demo");
+            Console.WriteLine();
+        }
+
+        // ...existing code...
     }
 
     // Extension method for reading structs from MemoryMappedViewAccessor
