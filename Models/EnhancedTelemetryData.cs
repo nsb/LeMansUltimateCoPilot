@@ -97,10 +97,12 @@ namespace LeMansUltimateCoPilot.Models
         // Track and session information
         public string VehicleName { get; set; } = "";
         public string TrackName { get; set; } = "";
+        public string TrackCondition { get; set; } = ""; // Dry, Wet, etc.
         public bool IsValidLap { get; set; }
 
         // Calculated fields for analysis
         public float DistanceTraveled { get; set; }
+        public double DistanceFromStart { get; set; } // Distance from start of track in meters
         public float LapProgress { get; set; } // 0.0 to 1.0
         public float TimeDelta { get; set; } // Compared to reference
         public float BrakingForce { get; set; }
@@ -256,8 +258,8 @@ namespace LeMansUltimateCoPilot.Models
                    "SuspensionVelocityFL,SuspensionVelocityFR,SuspensionVelocityRL,SuspensionVelocityRR," +
                    "FrontDownforce,RearDownforce,Drag,FrontRideHeight,RearRideHeight," +
                    "FuelLevel,PitLimiterActive,PitSpeedLimit," +
-                   "VehicleName,TrackName,IsValidLap," +
-                   "DistanceTraveled,LapProgress,TimeDelta,BrakingForce,TractionForce";
+                   "VehicleName,TrackName,TrackCondition,IsValidLap," +
+                   "DistanceTraveled,DistanceFromStart,LapProgress,TimeDelta,BrakingForce,TractionForce";
         }
 
         /// <summary>
@@ -285,8 +287,8 @@ namespace LeMansUltimateCoPilot.Models
                    $"{SuspensionVelocityFL.ToString("F4", culture)},{SuspensionVelocityFR.ToString("F4", culture)},{SuspensionVelocityRL.ToString("F4", culture)},{SuspensionVelocityRR.ToString("F4", culture)}," +
                    $"{FrontDownforce.ToString("F2", culture)},{RearDownforce.ToString("F2", culture)},{Drag.ToString("F3", culture)},{FrontRideHeight.ToString("F4", culture)},{RearRideHeight.ToString("F4", culture)}," +
                    $"{FuelLevel.ToString("F2", culture)},{PitLimiterActive},{PitSpeedLimit.ToString("F1", culture)}," +
-                   $"\"{VehicleName}\",\"{TrackName}\",{IsValidLap}," +
-                   $"{DistanceTraveled.ToString("F2", culture)},{LapProgress.ToString("F4", culture)},{TimeDelta.ToString("F3", culture)},{BrakingForce.ToString("F3", culture)},{TractionForce.ToString("F3", culture)}";
+                   $"\"{VehicleName}\",\"{TrackName}\",\"{TrackCondition}\",{IsValidLap}," +
+                   $"{DistanceTraveled.ToString("F2", culture)},{DistanceFromStart.ToString("F2", culture)},{LapProgress.ToString("F4", culture)},{TimeDelta.ToString("F3", culture)},{BrakingForce.ToString("F3", culture)},{TractionForce.ToString("F3", culture)}";
         }
     }
 }
