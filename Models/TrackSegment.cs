@@ -132,6 +132,12 @@ namespace LeMansUltimateCoPilot.Models
         public int ImportanceRating { get; set; }
 
         /// <summary>
+        /// Human-readable description of this segment
+        /// </summary>
+        [JsonPropertyName("description")]
+        public string Description { get; set; } = string.Empty;
+
+        /// <summary>
         /// Additional notes or coaching tips for this segment
         /// </summary>
         [JsonPropertyName("notes")]
