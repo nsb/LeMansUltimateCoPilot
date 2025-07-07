@@ -13,6 +13,7 @@ namespace LeMansUltimateCoPilot
     public class VoiceCoachDemo
     {
         private VoiceDrivingCoach? _voiceCoach;
+        private VoiceOutputService? _voiceService;
         private readonly CancellationTokenSource _cancellationTokenSource = new();
         private readonly List<EnhancedTelemetryData> _simulatedTelemetry = new();
         private ReferenceLap? _referenceLap;
@@ -22,11 +23,14 @@ namespace LeMansUltimateCoPilot
         {
             Console.WriteLine("🏁 Le Mans Ultimate Voice Driving Coach Demo");
             Console.WriteLine("==========================================\n");
+            Console.WriteLine("🔊 This demo uses Windows Text-to-Speech for actual voice output!");
+            Console.WriteLine("   Make sure your speakers/headphones are connected and volume is up.");
+            Console.WriteLine("   You will hear real coaching messages during the demonstration.\n");
 
             try
             {
                 // Initialize the demo
-                InitializeDemo();
+                await InitializeDemoAsync();
 
                 // Show the different demo scenarios
                 await ShowDemoMenuAsync();
@@ -41,7 +45,7 @@ namespace LeMansUltimateCoPilot
             }
         }
 
-        private void InitializeDemo()
+        private async Task InitializeDemoAsync()
         {
             Console.WriteLine("🔧 Initializing Voice Coach Demo...");
 
@@ -55,13 +59,22 @@ namespace LeMansUltimateCoPilot
                 Temperature = 0.7
             };
 
-            // Create services for the demo - use mock implementations
+            // Create services for the demo
             var llmService = new MockLLMCoachingService();
-            var voiceService = new MockVoiceOutputService();
+            
+            // Use real VoiceOutputService for actual speech on Windows
+            _voiceService = new VoiceOutputService(new VoiceSettings 
+            { 
+                Volume = 80, 
+                Rate = 0, 
+                VoiceName = "", // Use default voice
+                EnableSSML = false 
+            });
+            
             var comparisonService = new MockRealTimeComparisonService();
 
             // Configure the voice coach
-            _voiceCoach = new VoiceDrivingCoach(llmService, voiceService, comparisonService);
+            _voiceCoach = new VoiceDrivingCoach(llmService, _voiceService, comparisonService);
 
             // Set up event handlers to show what's happening
             _voiceCoach.CoachingProvided += OnCoachingProvided;
@@ -69,7 +82,16 @@ namespace LeMansUltimateCoPilot
             // Generate demo data
             GenerateDemoData();
 
-            Console.WriteLine("✅ Voice Coach initialized successfully!\n");
+            Console.WriteLine("✅ Voice Coach initialized successfully!");
+            
+            // Test voice output
+            Console.WriteLine("🔊 Testing voice output...");
+            if (_voiceService != null)
+            {
+                await _voiceService.SpeakAsync("Voice driving coach system initialized. Welcome to the demonstration.");
+                Console.WriteLine("✅ Voice test completed!");
+            }
+            Console.WriteLine();
         }
 
         private void GenerateDemoData()
@@ -361,9 +383,20 @@ namespace LeMansUltimateCoPilot
                 Console.WriteLine($"🎚️ Testing voice settings:");
                 Console.WriteLine($"   Rate: {settings.Rate}, Volume: {settings.Volume}%, Voice: {settings.VoiceName}");
                 Console.WriteLine($"🗣️ \"Turn in earlier for optimal line through this corner.\"");
-                Console.WriteLine("🔊 [Playing with these settings...]");
                 
-                await Task.Delay(2500);
+                if (_voiceService != null)
+                {
+                    Console.WriteLine("🔊 [Speaking with these settings...]");
+                    // Update voice settings and speak
+                    _voiceService.UpdateSettings(settings);
+                    await _voiceService.SpeakAsync("Turn in earlier for optimal line through this corner.");
+                }
+                else
+                {
+                    Console.WriteLine("🔊 [Simulating voice with these settings...]");
+                    await Task.Delay(2500);
+                }
+                
                 Console.WriteLine("✅ Voice test completed\n");
             }
 
@@ -406,17 +439,27 @@ namespace LeMansUltimateCoPilot
 
             var coachingMessages = new[]
             {
-                "🗣️ \"Your braking consistency has improved 15% since last session. Great progress!\"",
-                "🗣️ \"Try carrying 5 more km/h through the fast left-hander. You have the downforce.\"",
-                "🗣️ \"Your throttle application is getting smoother. Keep building that muscle memory.\"",
-                "🗣️ \"Focus on hitting your apex markers. Small improvements add up to big lap time gains.\""
+                "Your braking consistency has improved 15% since last session. Great progress!",
+                "Try carrying 5 more km/h through the fast left-hander. You have the downforce.",
+                "Your throttle application is getting smoother. Keep building that muscle memory.",
+                "Focus on hitting your apex markers. Small improvements add up to big lap time gains."
             };
 
             foreach (var message in coachingMessages)
             {
-                Console.WriteLine(message);
-                Console.WriteLine("🔊 [Playing voice coaching...]");
-                await Task.Delay(2000);
+                Console.WriteLine($"🗣️ \"{message}\"");
+                
+                if (_voiceService != null)
+                {
+                    Console.WriteLine("🔊 [Speaking voice coaching...]");
+                    await _voiceService.SpeakAsync(message);
+                }
+                else
+                {
+                    Console.WriteLine("🔊 [Simulating voice coaching...]");
+                    await Task.Delay(2000);
+                }
+                
                 Console.WriteLine("✅ Message delivered\n");
             }
 
@@ -465,6 +508,11 @@ namespace LeMansUltimateCoPilot
                 // VoiceDrivingCoach doesn't implement IDisposable, so we don't dispose it
             }
 
+            if (_voiceService != null)
+            {
+                _voiceService.Dispose();
+            }
+
             _cancellationTokenSource.Cancel();
             _cancellationTokenSource.Dispose();
             
@@ -489,9 +537,12 @@ namespace LeMansUltimateCoPilot
             var llmService = new MockLLMCoachingService();
             var coachingMessage = await llmService.GenerateCoachingMessageAsync(context, new List<CoachingContext>(), CoachingStyle.Encouraging);
 
-            // Simulate voice output
-            var voiceService = new MockVoiceOutputService();
-            await voiceService.SpeakAsync(coachingMessage.Content);
+            // Use real voice output for actual speech
+            if (_voiceService != null)
+            {
+                Console.WriteLine($"🔊 Speaking: \"{coachingMessage.Content}\"");
+                await _voiceService.SpeakAsync(coachingMessage.Content);
+            }
 
             // Trigger the coaching provided event
             OnCoachingProvided(this, coachingMessage);
