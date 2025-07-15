@@ -237,6 +237,7 @@ namespace LeMansUltimateCoPilot
             Console.WriteLine("  'b' - Save current best lap as reference");
             Console.WriteLine("  'v' - Validate telemetry offsets (debug mode)");
             Console.WriteLine("  'd' - Run Voice Driving Coach Demo");
+            Console.WriteLine("  't' - Test player detection logic");
             Console.WriteLine();
 
             // Initialize telemetry logger
@@ -363,6 +364,11 @@ namespace LeMansUltimateCoPilot
                             mmf?.Dispose();
                             mmf = null;
                             accessor = null;
+                            
+                            // Clear cached player vehicle ID to force re-detection
+                            _cachedPlayerVehicleID = -1;
+                            _lastPlayerLookup = DateTime.MinValue;
+                            
                             Console.Clear();
                             Console.WriteLine("Reconnecting...");
                         }
@@ -398,6 +404,11 @@ namespace LeMansUltimateCoPilot
                         {
                             // Run Voice Driving Coach Demo
                             RunVoiceCoachDemo();
+                        }
+                        else if (key.KeyChar == 't' || key.KeyChar == 'T')
+                        {
+                            // Test player detection
+                            TestPlayerDetection();
                         }
                     }
 
@@ -444,6 +455,395 @@ namespace LeMansUltimateCoPilot
                 }
             }
             return null;
+        }
+
+        // Official rF2 Scoring structures based on rF2SharedMemoryMapPlugin
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        public struct rF2ScoringInfo
+        {
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)]
+            public byte[] mTrackName;            // current track name
+            public int mSession;                 // current session (0=testday 1-4=practice 5-8=qual 9=warmup 10-13=race)
+            public double mCurrentET;            // current time
+            public double mEndET;                // ending time
+            public int mMaxLaps;                 // maximum laps
+            public double mLapDist;              // distance around track
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public byte[] pointer1;              // pointer placeholder
+            public int mNumVehicles;             // current number of vehicles
+            public byte mGamePhase;              // game phase
+            public sbyte mYellowFlagState;       // yellow flag state
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
+            public sbyte[] mSectorFlag;          // sector flags
+            public byte mStartLight;             // start light frame
+            public byte mNumRedLights;           // number of red lights
+            public byte mInRealtime;             // in realtime
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
+            public byte[] mPlayerName;           // player name
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)]
+            public byte[] mPlrFileName;          // player file name
+            public double mDarkCloud;            // cloud darkness
+            public double mRaining;              // rain severity
+            public double mAmbientTemp;          // ambient temperature
+            public double mTrackTemp;            // track temperature
+            public rF2Vec3 mWind;                // wind speed
+            public double mMinPathWetness;       // minimum path wetness
+            public double mMaxPathWetness;       // maximum path wetness
+            public byte mGameMode;               // game mode
+            public byte mIsPasswordProtected;    // password protected
+            public ushort mServerPort;           // server port
+            public uint mServerPublicIP;         // server public IP
+            public int mMaxPlayers;              // maximum players
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
+            public byte[] mServerName;           // server name
+            public float mStartET;               // start time
+            public double mAvgPathWetness;       // average path wetness
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 200)]
+            public byte[] mExpansion;            // future expansion
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public byte[] pointer2;              // pointer placeholder
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        public struct rF2VehicleScoring
+        {
+            public int mID;                      // slot ID
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
+            public byte[] mDriverName;           // driver name
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)]
+            public byte[] mVehicleName;          // vehicle name
+            public short mTotalLaps;             // laps completed
+            public sbyte mSector;                // current sector
+            public sbyte mFinishStatus;          // finish status
+            public double mLapDist;              // current lap distance
+            public double mPathLateral;          // lateral position
+            public double mTrackEdge;            // track edge
+            public double mBestSector1;          // best sector 1
+            public double mBestSector2;          // best sector 2
+            public double mBestLapTime;          // best lap time
+            public double mLastSector1;          // last sector 1
+            public double mLastSector2;          // last sector 2
+            public double mLastLapTime;          // last lap time
+            public double mCurSector1;           // current sector 1
+            public double mCurSector2;           // current sector 2
+            public short mNumPitstops;           // number of pitstops
+            public short mNumPenalties;          // number of penalties
+            public byte mIsPlayer;               // is this the player's vehicle (0=no, 1=yes)
+            public sbyte mControl;               // who's in control (-1=nobody, 0=local player, 1=local AI, 2=remote, 3=replay)
+            public byte mInPits;                 // in pits flag
+            public byte mPlace;                  // 1-based position
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
+            public byte[] mVehicleClass;         // vehicle class
+            public double mTimeBehindNext;       // time behind next vehicle
+            public int mLapsBehindNext;          // laps behind next vehicle
+            public double mTimeBehindLeader;     // time behind leader
+            public int mLapsBehindLeader;        // laps behind leader
+            public double mLapStartET;           // lap start time
+            public rF2Vec3 mPos;                 // world position
+            public rF2Vec3 mLocalVel;            // local velocity
+            public rF2Vec3 mLocalAccel;          // local acceleration
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
+            public rF2Vec3[] mOri;               // orientation matrix
+            public rF2Vec3 mLocalRot;            // local rotation
+            public rF2Vec3 mLocalRotAccel;       // local rotational acceleration
+            public byte mHeadlights;             // headlights status
+            public byte mPitState;               // pit state
+            public byte mServerScored;           // server scored
+            public byte mIndividualPhase;        // individual phase
+            public int mQualification;           // qualification position
+            public double mTimeIntoLap;          // time into lap
+            public double mEstimatedLapTime;     // estimated lap time
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 24)]
+            public byte[] mPitGroup;             // pit group
+            public byte mFlag;                   // primary flag
+            public byte mUnderYellow;            // under yellow flag
+            public byte mCountLapFlag;           // count lap flag
+            public byte mInGarageStall;          // in garage stall
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
+            public byte[] mUpgradePack;          // upgrade pack
+            public float mPitLapDist;            // pit lap distance
+            public float mBestLapSector1;        // best lap sector 1
+            public float mBestLapSector2;        // best lap sector 2
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 48)]
+            public byte[] mExpansion;            // future expansion
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        public struct rF2Scoring
+        {
+            public int mBytesUpdatedHint;        // bytes updated hint
+            public rF2ScoringInfo mScoringInfo;  // scoring info
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 128)]
+            public rF2VehicleScoring[] mVehicles; // vehicle scoring array
+        }
+
+        // Cache player vehicle ID to avoid repeated lookups
+        private static int _cachedPlayerVehicleID = -1;
+        private static DateTime _lastPlayerLookup = DateTime.MinValue;
+        private static readonly TimeSpan PlayerLookupCacheTime = TimeSpan.FromSeconds(2);
+
+        static int FindPlayerVehicleID()
+        {
+            // Use cached value if recent
+            if (_cachedPlayerVehicleID != -1 && 
+                DateTime.Now - _lastPlayerLookup < PlayerLookupCacheTime)
+            {
+                return _cachedPlayerVehicleID;
+            }
+
+            try
+            {
+                // Try to connect to scoring shared memory
+                using var scoringMmf = MemoryMappedFile.OpenExisting("$rFactor2SMMP_Scoring$");
+                using var scoringAccessor = scoringMmf.CreateViewAccessor();
+                
+                // Read version numbers to check data stability with retry logic
+                var versionBegin = scoringAccessor.ReadUInt32(0);
+                var versionEnd = scoringAccessor.ReadUInt32(4);
+                
+                if (versionBegin != versionEnd)
+                {
+                    // Retry once after a short delay
+                    Thread.Sleep(10);
+                    versionBegin = scoringAccessor.ReadUInt32(0);
+                    versionEnd = scoringAccessor.ReadUInt32(4);
+                    
+                    if (versionBegin != versionEnd)
+                    {
+                        Console.WriteLine("⚠️  Scoring data version mismatch after retry");
+                        return _cachedPlayerVehicleID != -1 ? _cachedPlayerVehicleID : -1;
+                    }
+                }
+                
+                // Read the scoring structure using proper marshalling
+                var scoringSize = Marshal.SizeOf<rF2Scoring>();
+                var scoringData = new byte[scoringSize];
+                
+                try
+                {
+                    scoringAccessor.ReadArray(8, scoringData, 0, scoringSize); // Skip version info (8 bytes)
+                    
+                    // Marshal the data to the structure
+                    var handle = GCHandle.Alloc(scoringData, GCHandleType.Pinned);
+                    rF2Scoring scoring;
+                    try
+                    {
+                        scoring = Marshal.PtrToStructure<rF2Scoring>(handle.AddrOfPinnedObject());
+                    }
+                    finally
+                    {
+                        handle.Free();
+                    }
+                    
+                    var numVehicles = scoring.mScoringInfo.mNumVehicles;
+                    Console.WriteLine($"🔍 Scoring data - NumVehicles: {numVehicles}");
+                    
+                    if (numVehicles <= 0)
+                    {
+                        Console.WriteLine("⚠️  No vehicles in scoring data");
+                        return _cachedPlayerVehicleID != -1 ? _cachedPlayerVehicleID : -1;
+                    }
+                    
+                    // Get player name from scoring info for validation
+                    var playerName = System.Text.Encoding.UTF8.GetString(scoring.mScoringInfo.mPlayerName).TrimEnd('\0');
+                    Console.WriteLine($"🎯 Looking for player: '{playerName}'");
+                    
+                    // Track the best candidate if no exact match is found
+                    int bestCandidateID = -1;
+                    string bestCandidateReason = "";
+                    
+                    // Search through all vehicles to find the player's car
+                    for (int i = 0; i < numVehicles && i < 128; i++)
+                    {
+                        var vehicle = scoring.mVehicles[i];
+                        
+                        var vehicleID = vehicle.mID;
+                        var driverName = System.Text.Encoding.UTF8.GetString(vehicle.mDriverName).TrimEnd('\0');
+                        var vehicleName = System.Text.Encoding.UTF8.GetString(vehicle.mVehicleName).TrimEnd('\0');
+                        var isPlayer = vehicle.mIsPlayer == 1;
+                        var control = vehicle.mControl;
+                        var place = vehicle.mPlace;
+                        
+                        Console.WriteLine($"🚗 Vehicle {i}: ID={vehicleID}, Driver='{driverName}', Vehicle='{vehicleName}', IsPlayer={isPlayer}, Control={control}, Place={place}");
+                        
+                        // Check for player using multiple criteria with priority scoring
+                        bool isPlayerVehicle = false;
+                        string detectionMethod = "";
+                        
+                        // Priority 1: mIsPlayer flag (most reliable)
+                        if (isPlayer)
+                        {
+                            isPlayerVehicle = true;
+                            detectionMethod = "mIsPlayer flag";
+                        }
+                        
+                        // Priority 2: mControl == 0 (local player control)
+                        if (!isPlayerVehicle && control == 0)
+                        {
+                            isPlayerVehicle = true;
+                            detectionMethod = "mControl == 0 (local player)";
+                        }
+                        
+                        // Priority 3: driver name matches player name
+                        if (!isPlayerVehicle && !string.IsNullOrEmpty(playerName) && 
+                            !string.IsNullOrEmpty(driverName) && 
+                            driverName.Equals(playerName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            isPlayerVehicle = true;
+                            detectionMethod = "driver name match";
+                        }
+                        
+                        // Track candidates for fallback
+                        if (!isPlayerVehicle)
+                        {
+                            // Prefer vehicles with control == 0 even if not marked as player
+                            if (control == 0 && bestCandidateID == -1)
+                            {
+                                bestCandidateID = vehicleID;
+                                bestCandidateReason = $"control == 0 (local control) - {vehicleName}";
+                            }
+                            // Or vehicles in first place as secondary fallback
+                            else if (place == 1 && bestCandidateID == -1)
+                            {
+                                bestCandidateID = vehicleID;
+                                bestCandidateReason = $"place == 1 (first place) - {vehicleName}";
+                            }
+                        }
+                        
+                        if (isPlayerVehicle)
+                        {
+                            Console.WriteLine($"   ✅ Found via {detectionMethod}");
+                            Console.WriteLine($"🎯 Found player's vehicle: {vehicleName} (ID: {vehicleID})");
+                            
+                            // Cache the result
+                            _cachedPlayerVehicleID = vehicleID;
+                            _lastPlayerLookup = DateTime.Now;
+                            return vehicleID;
+                        }
+                    }
+                    
+                    Console.WriteLine("⚠️  Player's vehicle not found via primary methods");
+                    
+                    // Use best candidate if available
+                    if (bestCandidateID != -1)
+                    {
+                        Console.WriteLine($"🔄 Using best candidate: {bestCandidateReason} (ID: {bestCandidateID})");
+                        _cachedPlayerVehicleID = bestCandidateID;
+                        _lastPlayerLookup = DateTime.Now;
+                        return bestCandidateID;
+                    }
+                    
+                    // Final fallback: use first vehicle with valid data
+                    if (numVehicles > 0)
+                    {
+                        var fallbackVehicle = scoring.mVehicles[0];
+                        var fallbackID = fallbackVehicle.mID;
+                        var fallbackName = System.Text.Encoding.UTF8.GetString(fallbackVehicle.mVehicleName).TrimEnd('\0');
+                        Console.WriteLine($"🔄 Using fallback vehicle: {fallbackName} (ID: {fallbackID})");
+                        _cachedPlayerVehicleID = fallbackID;
+                        _lastPlayerLookup = DateTime.Now;
+                        return fallbackID;
+                    }
+                    
+                    return -1;
+                }
+                catch (Exception marshalEx)
+                {
+                    Console.WriteLine($"⚠️  Error marshalling scoring data: {marshalEx.Message}");
+                    
+                    // Fallback to manual parsing with corrected offsets
+                    var fallbackResult = FindPlayerVehicleIDFallback(scoringAccessor);
+                    if (fallbackResult != -1)
+                    {
+                        _cachedPlayerVehicleID = fallbackResult;
+                        _lastPlayerLookup = DateTime.Now;
+                    }
+                    return fallbackResult;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"⚠️  Error reading scoring data: {ex.Message}");
+                return _cachedPlayerVehicleID != -1 ? _cachedPlayerVehicleID : -1;
+            }
+        }
+
+        static int FindPlayerVehicleIDFallback(MemoryMappedViewAccessor scoringAccessor)
+        {
+            try
+            {
+                // Manual parsing with corrected structure offsets
+                var scoringInfoOffset = 8 + 4; // Skip version info (8 bytes) + mBytesUpdatedHint (4 bytes)
+                
+                // Read mNumVehicles from rF2ScoringInfo
+                // mNumVehicles is at offset 8 + 4 + 64 + 4 + 8 + 8 + 4 + 8 + 8 = 116
+                var numVehiclesOffset = scoringInfoOffset + 64 + 4 + 8 + 8 + 4 + 8 + 8; // After mTrackName + mSession + mCurrentET + mEndET + mMaxLaps + mLapDist + pointer1
+                var numVehicles = scoringAccessor.ReadInt32(numVehiclesOffset);
+                
+                Console.WriteLine($"🔍 Fallback: Scoring data - NumVehicles: {numVehicles}");
+                
+                if (numVehicles <= 0)
+                {
+                    Console.WriteLine("⚠️  No vehicles in fallback scoring data");
+                    return -1;
+                }
+                
+                // Calculate the start of the vehicle array
+                var scoringInfoSize = Marshal.SizeOf<rF2ScoringInfo>();
+                var vehicleArrayOffset = 8 + 4 + scoringInfoSize; // Skip version info + mBytesUpdatedHint + rF2ScoringInfo
+                var vehicleSize = Marshal.SizeOf<rF2VehicleScoring>();
+                
+                Console.WriteLine($"🔧 Fallback: Vehicle array offset: {vehicleArrayOffset}, vehicle size: {vehicleSize}");
+                
+                // Search through vehicles
+                for (int i = 0; i < numVehicles && i < 128; i++)
+                {
+                    var vehicleOffset = vehicleArrayOffset + (i * vehicleSize);
+                    
+                    try
+                    {
+                        var vehicleID = scoringAccessor.ReadInt32(vehicleOffset);
+                        
+                        // Read driver name (32 bytes at offset 4)
+                        var driverNameBytes = new byte[32];
+                        scoringAccessor.ReadArray(vehicleOffset + 4, driverNameBytes, 0, 32);
+                        var driverName = System.Text.Encoding.UTF8.GetString(driverNameBytes).TrimEnd('\0');
+                        
+                        // Read vehicle name (64 bytes at offset 36)
+                        var vehicleNameBytes = new byte[64];
+                        scoringAccessor.ReadArray(vehicleOffset + 36, vehicleNameBytes, 0, 64);
+                        var vehicleName = System.Text.Encoding.UTF8.GetString(vehicleNameBytes).TrimEnd('\0');
+                        
+                        // Read mIsPlayer flag (1 byte at offset 100 + 104 = 204)
+                        var isPlayerOffset = vehicleOffset + 100 + 104; // After mTotalLaps + mSector + mFinishStatus + mLapDist + ... + mNumPenalties
+                        var isPlayer = scoringAccessor.ReadByte(isPlayerOffset) == 1;
+                        
+                        // Read mControl flag (1 byte at offset 205)
+                        var control = scoringAccessor.ReadSByte(isPlayerOffset + 1);
+                        
+                        Console.WriteLine($"🚗 Fallback Vehicle {i}: ID={vehicleID}, Driver='{driverName}', Vehicle='{vehicleName}', IsPlayer={isPlayer}, Control={control}");
+                        
+                        // Check for player using multiple criteria
+                        if (isPlayer || control == 0)
+                        {
+                            Console.WriteLine($"🎯 Fallback found player's vehicle: {vehicleName} (ID: {vehicleID})");
+                            return vehicleID;
+                        }
+                    }
+                    catch (Exception vehicleEx)
+                    {
+                        Console.WriteLine($"⚠️  Error reading fallback vehicle {i}: {vehicleEx.Message}");
+                    }
+                }
+                
+                Console.WriteLine("⚠️  Player's vehicle not found in fallback scoring data");
+                return -1;
+            }
+            catch (Exception fallbackEx)
+            {
+                Console.WriteLine($"⚠️  Error in fallback player detection: {fallbackEx.Message}");
+                return -1;
+            }
         }
 
         static rF2Telemetry? ReadTelemetryData(MemoryMappedViewAccessor accessor)
@@ -497,9 +897,81 @@ namespace LeMansUltimateCoPilot
                     vehicle.mWheels[i].mExpansion = new byte[24];
                 }
 
-                // Use struct marshalling to read the entire first vehicle data
-                // The vehicle data starts at offset 16 (after the header)
-                int vehicleDataOffset = 16;
+                // Find the player's vehicle ID from scoring data first
+                var playerVehicleID = FindPlayerVehicleID();
+                var targetVehicleIndex = 0; // Default to first vehicle
+                var foundPlayerVehicle = false;
+                
+                if (playerVehicleID != -1)
+                {
+                    Console.WriteLine($"🎯 Looking for player's vehicle ID: {playerVehicleID}");
+                    
+                    // Find the correct vehicle in the telemetry array
+                    for (int i = 0; i < telemetry.mNumVehicles && i < 128; i++)
+                    {
+                        var checkOffset = 16 + (i * Marshal.SizeOf<rF2VehicleTelemetry>());
+                        
+                        try
+                        {
+                            var checkID = accessor.ReadInt32(checkOffset);
+                            
+                            if (checkID == playerVehicleID)
+                            {
+                                targetVehicleIndex = i;
+                                foundPlayerVehicle = true;
+                                Console.WriteLine($"🎯 Found player's vehicle at index {targetVehicleIndex}");
+                                break;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"⚠️  Error checking vehicle {i} ID: {ex.Message}");
+                        }
+                    }
+                }
+                
+                if (!foundPlayerVehicle)
+                {
+                    Console.WriteLine("⚠️  Could not find player's vehicle in telemetry data");
+                    
+                    // Try to find any vehicle with reasonable activity (non-zero RPM, throttle, etc.)
+                    for (int i = 0; i < telemetry.mNumVehicles && i < 128; i++)
+                    {
+                        var checkOffset = 16 + (i * Marshal.SizeOf<rF2VehicleTelemetry>());
+                        
+                        try
+                        {
+                            // Read some basic telemetry to check if this vehicle has activity
+                            var checkRPM = accessor.ReadDouble(checkOffset + 352); // Rough offset for RPM
+                            var checkThrottle = accessor.ReadDouble(checkOffset + 372); // Rough offset for throttle
+                            var checkBrake = accessor.ReadDouble(checkOffset + 380); // Rough offset for brake
+                            var checkGear = accessor.ReadInt32(checkOffset + 344);  // Rough offset for gear
+                            
+                            // Check for signs of activity (RPM > idle, inputs > 0, or gear engaged)
+                            if (checkRPM > 800 || checkThrottle > 0.1 || checkBrake > 0.1 || Math.Abs(checkGear) > 0)
+                            {
+                                targetVehicleIndex = i;
+                                Console.WriteLine($"🔄 Found active vehicle at index {i} (RPM: {checkRPM:F0}, Throttle: {checkThrottle:F2}, Brake: {checkBrake:F2}, Gear: {checkGear})");
+                                break;
+                            }
+                        }
+                        catch
+                        {
+                            // Continue to next vehicle if this one has issues
+                        }
+                    }
+                    
+                    if (targetVehicleIndex == 0)
+                    {
+                        Console.WriteLine("🔄 No active vehicle found, using first vehicle");
+                    }
+                }
+                
+                // Use struct marshalling to read the correct vehicle data
+                // The vehicle data starts at offset 16 (after the header) + (vehicle index * vehicle size)
+                int vehicleDataOffset = 16 + (targetVehicleIndex * Marshal.SizeOf<rF2VehicleTelemetry>());
+                
+                Console.WriteLine($"🔧 Reading vehicle data at offset {vehicleDataOffset} (vehicle index {targetVehicleIndex})");
                 
                 // Read the vehicle data using marshalling
                 var vehicleSize = Marshal.SizeOf<rF2VehicleTelemetry>();
@@ -591,28 +1063,153 @@ namespace LeMansUltimateCoPilot
                     vehicle.mFuel = accessor.ReadDouble(miscDataOffset + 72);
                     vehicle.mEngineMaxRPM = accessor.ReadDouble(miscDataOffset + 80);
                     
-                    // Read some basic wheel data if possible
+                    // Read wheel data with proper struct calculations
                     try
                     {
-                        // The wheel data is at the end of the vehicle struct
-                        // This is a rough estimate - wheel data starts very late in the struct
-                        var wheelDataOffset = vehicleDataOffset + 1000; // Rough estimate
+                        // Calculate the offset to the wheel data array
+                        // The mWheels array is at the end of the rF2VehicleTelemetry struct
+                        // We need to calculate the exact offset based on the struct layout
+                        
+                        // Size of all fields before mWheels in rF2VehicleTelemetry
+                        int offsetToWheels = 0;
+                        offsetToWheels += 4;  // mID
+                        offsetToWheels += 8;  // mDeltaTime
+                        offsetToWheels += 8;  // mElapsedTime
+                        offsetToWheels += 4;  // mLapNumber
+                        offsetToWheels += 8;  // mLapStartET
+                        offsetToWheels += 64; // mVehicleName
+                        offsetToWheels += 64; // mTrackName
+                        offsetToWheels += 24; // mPos (3 doubles)
+                        offsetToWheels += 24; // mLocalVel (3 doubles)
+                        offsetToWheels += 24; // mLocalAccel (3 doubles)
+                        offsetToWheels += 72; // mOri (3 * 3 doubles)
+                        offsetToWheels += 24; // mLocalRot (3 doubles)
+                        offsetToWheels += 24; // mLocalRotAccel (3 doubles)
+                        offsetToWheels += 4;  // mGear
+                        offsetToWheels += 8;  // mEngineRPM
+                        offsetToWheels += 8;  // mEngineWaterTemp
+                        offsetToWheels += 8;  // mEngineOilTemp
+                        offsetToWheels += 8;  // mClutchRPM
+                        offsetToWheels += 8;  // mUnfilteredThrottle
+                        offsetToWheels += 8;  // mUnfilteredBrake
+                        offsetToWheels += 8;  // mUnfilteredSteering
+                        offsetToWheels += 8;  // mUnfilteredClutch
+                        offsetToWheels += 8;  // mFilteredThrottle
+                        offsetToWheels += 8;  // mFilteredBrake
+                        offsetToWheels += 8;  // mFilteredSteering
+                        offsetToWheels += 8;  // mFilteredClutch
+                        offsetToWheels += 8;  // mSteeringShaftTorque
+                        offsetToWheels += 8;  // mFront3rdDeflection
+                        offsetToWheels += 8;  // mRear3rdDeflection
+                        offsetToWheels += 8;  // mFrontWingHeight
+                        offsetToWheels += 8;  // mFrontRideHeight
+                        offsetToWheels += 8;  // mRearRideHeight
+                        offsetToWheels += 8;  // mDrag
+                        offsetToWheels += 8;  // mFrontDownforce
+                        offsetToWheels += 8;  // mRearDownforce
+                        offsetToWheels += 8;  // mFuel
+                        offsetToWheels += 8;  // mEngineMaxRPM
+                        offsetToWheels += 1;  // mScheduledStops
+                        offsetToWheels += 1;  // mOverheating
+                        offsetToWheels += 1;  // mDetached
+                        offsetToWheels += 1;  // mHeadlights
+                        offsetToWheels += 8;  // mDentSeverity
+                        offsetToWheels += 8;  // mLastImpactET
+                        offsetToWheels += 8;  // mLastImpactMagnitude
+                        offsetToWheels += 24; // mLastImpactPos (3 doubles)
+                        offsetToWheels += 8;  // mEngineTorque
+                        offsetToWheels += 4;  // mCurrentSector
+                        offsetToWheels += 1;  // mSpeedLimiter
+                        offsetToWheels += 1;  // mMaxGears
+                        offsetToWheels += 1;  // mFrontTireCompoundIndex
+                        offsetToWheels += 1;  // mRearTireCompoundIndex
+                        offsetToWheels += 8;  // mFuelCapacity
+                        offsetToWheels += 1;  // mFrontFlapActivated
+                        offsetToWheels += 1;  // mRearFlapActivated
+                        offsetToWheels += 1;  // mRearFlapLegalStatus
+                        offsetToWheels += 1;  // mIgnitionStarter
+                        offsetToWheels += 18; // mFrontTireCompoundName
+                        offsetToWheels += 18; // mRearTireCompoundName
+                        offsetToWheels += 1;  // mSpeedLimiterAvailable
+                        offsetToWheels += 1;  // mAntiStallActivated
+                        offsetToWheels += 2;  // mUnused
+                        offsetToWheels += 4;  // mVisualSteeringWheelRange
+                        offsetToWheels += 8;  // mRearBrakeBias
+                        offsetToWheels += 8;  // mTurboBoostPressure
+                        offsetToWheels += 12; // mPhysicsToGraphicsOffset (3 floats)
+                        offsetToWheels += 4;  // mPhysicalSteeringWheelRange
+                        offsetToWheels += 8;  // mBatteryChargeFraction
+                        offsetToWheels += 8;  // mElectricBoostMotorTorque
+                        offsetToWheels += 8;  // mElectricBoostMotorRPM
+                        offsetToWheels += 8;  // mElectricBoostMotorTemperature
+                        offsetToWheels += 8;  // mElectricBoostWaterTemperature
+                        offsetToWheels += 1;  // mElectricBoostMotorState
+                        offsetToWheels += 111; // mExpansion
+                        
+                        var wheelDataOffset = vehicleDataOffset + offsetToWheels;
+                        var wheelSize = Marshal.SizeOf<rF2Wheel>();
+                        
+                        Console.WriteLine($"🔧 Wheel data offset: {wheelDataOffset}, wheel size: {wheelSize}");
                         
                         for (int i = 0; i < 4; i++)
                         {
-                            var wheelOffset = wheelDataOffset + i * Marshal.SizeOf<rF2Wheel>();
-                            vehicle.mWheels[i].mRotation = accessor.ReadDouble(wheelOffset + 40); // Rotation is at offset 40 in rF2Wheel
-                            vehicle.mWheels[i].mTireLoad = accessor.ReadDouble(wheelOffset + 104); // TireLoad is at offset 104
-                            vehicle.mWheels[i].mPressure = accessor.ReadDouble(wheelOffset + 112); // Pressure is at offset 112
+                            var wheelOffset = wheelDataOffset + i * wheelSize;
                             
-                            // Read tire temperature (3 doubles at offset 120)
-                            vehicle.mWheels[i].mTemperature[0] = accessor.ReadDouble(wheelOffset + 120);
-                            vehicle.mWheels[i].mTemperature[1] = accessor.ReadDouble(wheelOffset + 128);
-                            vehicle.mWheels[i].mTemperature[2] = accessor.ReadDouble(wheelOffset + 136);
+                            // Read wheel data using proper struct offsets
+                            vehicle.mWheels[i].mSuspensionDeflection = accessor.ReadDouble(wheelOffset + 0);
+                            vehicle.mWheels[i].mRideHeight = accessor.ReadDouble(wheelOffset + 8);
+                            vehicle.mWheels[i].mSuspForce = accessor.ReadDouble(wheelOffset + 16);
+                            vehicle.mWheels[i].mBrakeTemp = accessor.ReadDouble(wheelOffset + 24);
+                            vehicle.mWheels[i].mBrakePressure = accessor.ReadDouble(wheelOffset + 32);
+                            vehicle.mWheels[i].mRotation = accessor.ReadDouble(wheelOffset + 40);
+                            vehicle.mWheels[i].mLateralPatchVel = accessor.ReadDouble(wheelOffset + 48);
+                            vehicle.mWheels[i].mLongitudinalPatchVel = accessor.ReadDouble(wheelOffset + 56);
+                            vehicle.mWheels[i].mLateralGroundVel = accessor.ReadDouble(wheelOffset + 64);
+                            vehicle.mWheels[i].mLongitudinalGroundVel = accessor.ReadDouble(wheelOffset + 72);
+                            vehicle.mWheels[i].mCamber = accessor.ReadDouble(wheelOffset + 80);
+                            vehicle.mWheels[i].mLateralForce = accessor.ReadDouble(wheelOffset + 88);
+                            vehicle.mWheels[i].mLongitudinalForce = accessor.ReadDouble(wheelOffset + 96);
+                            vehicle.mWheels[i].mTireLoad = accessor.ReadDouble(wheelOffset + 104);
+                            vehicle.mWheels[i].mGripFract = accessor.ReadDouble(wheelOffset + 112);
+                            vehicle.mWheels[i].mPressure = accessor.ReadDouble(wheelOffset + 120);
+                            
+                            // Read tire temperature (3 doubles at offset 128)
+                            vehicle.mWheels[i].mTemperature[0] = accessor.ReadDouble(wheelOffset + 128);
+                            vehicle.mWheels[i].mTemperature[1] = accessor.ReadDouble(wheelOffset + 136);
+                            vehicle.mWheels[i].mTemperature[2] = accessor.ReadDouble(wheelOffset + 144);
+                            
+                            vehicle.mWheels[i].mWear = accessor.ReadDouble(wheelOffset + 152);
+                            
+                            // Read terrain name (16 bytes at offset 160)
+                            accessor.ReadArray(wheelOffset + 160, vehicle.mWheels[i].mTerrainName, 0, 16);
+                            
+                            // Read surface info
+                            vehicle.mWheels[i].mSurfaceType = accessor.ReadByte(wheelOffset + 176);
+                            vehicle.mWheels[i].mFlat = accessor.ReadByte(wheelOffset + 177);
+                            vehicle.mWheels[i].mDetached = accessor.ReadByte(wheelOffset + 178);
+                            vehicle.mWheels[i].mStaticUndeflectedRadius = accessor.ReadByte(wheelOffset + 179);
+                            
+                            // Read additional wheel data
+                            vehicle.mWheels[i].mVerticalTireDeflection = accessor.ReadDouble(wheelOffset + 180);
+                            vehicle.mWheels[i].mWheelYLocation = accessor.ReadDouble(wheelOffset + 188);
+                            vehicle.mWheels[i].mToe = accessor.ReadDouble(wheelOffset + 196);
+                            vehicle.mWheels[i].mTireCarcassTemperature = accessor.ReadDouble(wheelOffset + 204);
+                            
+                            // Read tire inner layer temperature (3 doubles at offset 212)
+                            vehicle.mWheels[i].mTireInnerLayerTemperature[0] = accessor.ReadDouble(wheelOffset + 212);
+                            vehicle.mWheels[i].mTireInnerLayerTemperature[1] = accessor.ReadDouble(wheelOffset + 220);
+                            vehicle.mWheels[i].mTireInnerLayerTemperature[2] = accessor.ReadDouble(wheelOffset + 228);
+                            
+                            // Read expansion data (24 bytes at offset 236)
+                            accessor.ReadArray(wheelOffset + 236, vehicle.mWheels[i].mExpansion, 0, 24);
                         }
+                        
+                        // Debug output for first wheel
+                        Console.WriteLine($"🔧 FL Wheel - Pressure: {vehicle.mWheels[0].mPressure:F1} kPa, Temp: {vehicle.mWheels[0].mTemperature[0]:F1}K, Load: {vehicle.mWheels[0].mTireLoad:F1}N");
                     }
-                    catch
+                    catch (Exception wheelEx)
                     {
+                        Console.WriteLine($"⚠️  Error reading wheel data: {wheelEx.Message}");
                         // If wheel data reading fails, initialize with defaults
                         for (int i = 0; i < 4; i++)
                         {
@@ -723,7 +1320,7 @@ namespace LeMansUltimateCoPilot
             }
 
             // Controls reminder
-            Console.WriteLine("CONTROLS: 'q'=Quit | 'r'=Reconnect | 'l'=Toggle Logging | 's'=Statistics | 'p'=Reference Laps | 'v'=Validate Offsets");
+            Console.WriteLine("CONTROLS: 'q'=Quit | 'r'=Reconnect | 'l'=Toggle Logging | 's'=Statistics | 'p'=Reference Laps | 'v'=Validate Offsets | 't'=Test Player Detection");
             
             // Clear any remaining lines
             for (int i = 0; i < 5; i++)
@@ -975,6 +1572,100 @@ namespace LeMansUltimateCoPilot
             Console.WriteLine("   - Throttle/Brake: 0.0-1.0");
             Console.WriteLine("   - Steering: -1.0 to 1.0");
             Console.WriteLine();
+        }
+
+        static void TestPlayerDetection()
+        {
+            Console.Clear();
+            Console.WriteLine("🧪 TESTING PLAYER DETECTION LOGIC");
+            Console.WriteLine("=================================");
+            Console.WriteLine();
+            
+            try
+            {
+                // Clear cache to force fresh detection
+                _cachedPlayerVehicleID = -1;
+                _lastPlayerLookup = DateTime.MinValue;
+                
+                Console.WriteLine("1. Testing player detection...");
+                var playerID = FindPlayerVehicleID();
+                
+                if (playerID != -1)
+                {
+                    Console.WriteLine($"✅ Player detection successful! Vehicle ID: {playerID}");
+                    Console.WriteLine($"🔄 Cached for future lookups (expires in {PlayerLookupCacheTime.TotalSeconds}s)");
+                }
+                else
+                {
+                    Console.WriteLine("❌ Player detection failed!");
+                }
+                
+                Console.WriteLine();
+                Console.WriteLine("2. Testing cached lookup...");
+                var cachedID = FindPlayerVehicleID();
+                
+                if (cachedID == playerID)
+                {
+                    Console.WriteLine("✅ Cache working correctly");
+                }
+                else
+                {
+                    Console.WriteLine("⚠️  Cache mismatch or detection changed");
+                }
+                
+                Console.WriteLine();
+                Console.WriteLine("3. Testing with telemetry data...");
+                
+                // Try to read telemetry with the detected player
+                try
+                {
+                    using var mmf = MemoryMappedFile.OpenExisting("$rFactor2SMMP_Telemetry$");
+                    using var accessor = mmf.CreateViewAccessor();
+                    
+                    var telemetry = ReadTelemetryData(accessor);
+                    if (telemetry.HasValue)
+                    {
+                        var vehicleName = System.Text.Encoding.UTF8.GetString(telemetry.Value.mVehicles.mVehicleName).TrimEnd('\0');
+                        var trackName = System.Text.Encoding.UTF8.GetString(telemetry.Value.mVehicles.mTrackName).TrimEnd('\0');
+                        var rpm = telemetry.Value.mVehicles.mEngineRPM;
+                        var gear = telemetry.Value.mVehicles.mGear;
+                        
+                        Console.WriteLine($"✅ Telemetry data read successfully!");
+                        Console.WriteLine($"   Vehicle: {vehicleName}");
+                        Console.WriteLine($"   Track: {trackName}");
+                        Console.WriteLine($"   RPM: {rpm:F0}");
+                        Console.WriteLine($"   Gear: {gear}");
+                        Console.WriteLine($"   Vehicle ID: {telemetry.Value.mVehicles.mID}");
+                        
+                        if (telemetry.Value.mVehicles.mID == playerID)
+                        {
+                            Console.WriteLine("✅ Telemetry vehicle ID matches detected player ID!");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"⚠️  Telemetry vehicle ID ({telemetry.Value.mVehicles.mID}) doesn't match detected player ID ({playerID})");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("❌ Could not read telemetry data");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"❌ Error reading telemetry: {ex.Message}");
+                }
+                
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Test failed: {ex.Message}");
+            }
+            
+            Console.WriteLine();
+            Console.WriteLine("Press any key to return to main view...");
+            Console.ReadKey();
+            Console.Clear();
         }
 
         // ...existing code...
