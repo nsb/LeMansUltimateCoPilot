@@ -7,120 +7,206 @@ using LeMansUltimateCoPilot.Services;
 
 namespace LeMansUltimateCoPilot
 {
-    // rFactor2 Telemetry Data Structure (simplified version)
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct rF2VehicleTelemetry
+    // Official rF2 Telemetry Data Structure from rF2SharedMemoryMapPlugin
+    // Source: https://github.com/TheIronWolfModding/rF2SharedMemoryMapPlugin/blob/master/Include/rF2State.h
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    public struct rF2Vec3
     {
-        public int mID;                      // slot ID (note that it can be re-used in multiplayer after someone leaves)
-        public float mDeltaTime;             // time since last update (seconds)
-        public float mElapsedTime;           // game session time
-        public int mLapNumber;               // current lap number
-        public float mLapStartET;            // time this lap was started
-        public float mPos_x, mPos_y, mPos_z; // world position in meters
-        public float mLocalVel_x, mLocalVel_y, mLocalVel_z; // velocity (m/s) in local vehicle coordinates
-        public float mLocalAccel_x, mLocalAccel_y, mLocalAccel_z; // acceleration (m/s^2) in local vehicle coordinates
-        
-        // Engine data
-        public float mUnfilteredThrottle;    // ranges  0.0-1.0
-        public float mUnfilteredBrake;       // ranges  0.0-1.0
-        public float mUnfilteredSteering;    // ranges -1.0-1.0 (left to right)
-        public float mUnfilteredClutch;      // ranges  0.0-1.0
-        
-        public float mFilteredThrottle;      // ranges  0.0-1.0
-        public float mFilteredBrake;         // ranges  0.0-1.0
-        public float mFilteredSteering;      // ranges -1.0-1.0 (left to right)
-        public float mFilteredClutch;        // ranges  0.0-1.0
-        
-        public float mSteeringShaftTorque;   // torque around steering shaft (used to be mSteeringArmForce)
-        public float mFront3rdDeflection;    // deflection at front 3rd spring
-        public float mRear3rdDeflection;     // deflection at rear 3rd spring
-        
-        public float mFrontWingHeight;       // front wing height
-        public float mFrontRideHeight;       // front ride height
-        public float mRearRideHeight;        // rear ride height
-        public float mDrag;                  // drag
-        public float mFrontDownforce;        // front downforce
-        public float mRearDownforce;         // rear downforce
-        
-        public float mFuel;                  // amount of fuel (liters)
-        public float mEngineMaxRPM;          // rev limit
-        public float mScheduledStops;        // number of scheduled pitstops
-        public float mOverheating;           // whether overheating icon is shown
-        public float mDetached;              // whether any parts (besides wheels) have been detached
-        public float mHeadlights;            // whether headlights are on
-        public float mPitLimiter;            // whether pit limiter is on
-        public float mPitSpeedLimit;         // pit speed limit
-        
-        public float mEngineRPM;             // engine RPM
-        public float mEngineWaterTemp;       // Celsius
-        public float mEngineOilTemp;         // Celsius
-        public float mClutchRPM;             // clutch RPM
-        
-        // Transmission
-        public float mUnfilteredRPM;         // engine RPM
-        public float mFilteredRPM;           // engine RPM
-        public int mGear;                    // -1=reverse, 0=neutral, 1+=forward gears
-        public float mBoostPressure;         // boost pressure if available
-        public float mTurboSpeedPercent;     // turbo speed in percent if available
-        
-        // Tires - FL, FR, RL, RR
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-        public float[] mWheelRotation;       // radians/sec
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-        public float[] mTireLoad;            // kilograms
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-        public float[] mTireGripFract;       // an approximation of what fraction of the contact patch is sliding
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-        public float[] mTirePressure;        // Pascals
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-        public float[] mTireTemp;            // Celsius
-        
-        // Suspension - FL, FR, RL, RR
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-        public float[] mWheelYLocation;      // wheel Y location relative to vehicle Y location
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-        public float[] mSuspensionDeflection; // deflection at wheel
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-        public float[] mSuspensionVelocity;  // velocity of wheel deflection
-        
-        public rF2VehicleTelemetry()
-        {
-            mWheelRotation = new float[4];
-            mTireLoad = new float[4];
-            mTireGripFract = new float[4];
-            mTirePressure = new float[4];
-            mTireTemp = new float[4];
-            mWheelYLocation = new float[4];
-            mSuspensionDeflection = new float[4];
-            mSuspensionVelocity = new float[4];
-        }
+        public double x, y, z;
     }
 
-    // Main telemetry structure
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    public struct rF2Wheel
+    {
+        public double mSuspensionDeflection;  // meters
+        public double mRideHeight;           // meters
+        public double mSuspForce;            // pushrod load in Newtons
+        public double mBrakeTemp;            // Celsius
+        public double mBrakePressure;        // currently 0.0-1.0, depending on driver input and brake balance
+        public double mRotation;             // radians/sec
+        public double mLateralPatchVel;      // lateral velocity at contact patch
+        public double mLongitudinalPatchVel; // longitudinal velocity at contact patch
+        public double mLateralGroundVel;     // lateral velocity at contact patch
+        public double mLongitudinalGroundVel; // longitudinal velocity at contact patch
+        public double mCamber;               // radians
+        public double mLateralForce;         // Newtons
+        public double mLongitudinalForce;    // Newtons
+        public double mTireLoad;             // Newtons
+        public double mGripFract;            // approximation of what fraction of the contact patch is sliding
+        public double mPressure;             // kPa (tire pressure)
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
+        public double[] mTemperature;        // Kelvin (subtract 273.15 to get Celsius), left/center/right
+        public double mWear;                 // wear (0.0-1.0, fraction of maximum)
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
+        public byte[] mTerrainName;          // the material prefixes from the TDF file
+        public byte mSurfaceType;            // 0=dry, 1=wet, 2=grass, 3=dirt, 4=gravel, 5=rumblestrip, 6=special
+        public byte mFlat;                   // whether tire is flat
+        public byte mDetached;               // whether wheel is detached
+        public byte mStaticUndeflectedRadius; // tire radius in centimeters
+        public double mVerticalTireDeflection; // how much is tire deflected from its (speed-sensitive) radius
+        public double mWheelYLocation;       // wheel's y location relative to vehicle y location
+        public double mToe;                  // current toe angle w.r.t. the vehicle
+        public double mTireCarcassTemperature; // rough average of temperature samples from carcass (Kelvin)
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
+        public double[] mTireInnerLayerTemperature; // rough average of temperature samples from innermost layer of rubber (Kelvin)
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 24)]
+        public byte[] mExpansion;            // for future use
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    public struct rF2VehicleTelemetry
+    {
+        // Time
+        public int mID;                      // slot ID (note that it can be re-used in multiplayer after someone leaves)
+        public double mDeltaTime;            // time since last update (seconds)
+        public double mElapsedTime;          // game session time
+        public int mLapNumber;               // current lap number
+        public double mLapStartET;           // time this lap was started
+        
+        // Vehicle and track names
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)]
+        public byte[] mVehicleName;          // current vehicle name
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)]
+        public byte[] mTrackName;            // current track name
+
+        // Position and derivatives
+        public rF2Vec3 mPos;                 // world position in meters
+        public rF2Vec3 mLocalVel;            // velocity (meters/sec) in local vehicle coordinates
+        public rF2Vec3 mLocalAccel;          // acceleration (meters/sec^2) in local vehicle coordinates
+
+        // Orientation and derivatives
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
+        public rF2Vec3[] mOri;               // rows of orientation matrix
+        public rF2Vec3 mLocalRot;            // rotation (radians/sec) in local vehicle coordinates
+        public rF2Vec3 mLocalRotAccel;       // rotational acceleration (radians/sec^2) in local vehicle coordinates
+
+        // Vehicle status
+        public int mGear;                    // -1=reverse, 0=neutral, 1+=forward gears
+        public double mEngineRPM;            // engine RPM
+        public double mEngineWaterTemp;      // Celsius
+        public double mEngineOilTemp;        // Celsius
+        public double mClutchRPM;            // clutch RPM
+
+        // Driver input
+        public double mUnfilteredThrottle;   // ranges 0.0-1.0
+        public double mUnfilteredBrake;      // ranges 0.0-1.0
+        public double mUnfilteredSteering;   // ranges -1.0-1.0 (left to right)
+        public double mUnfilteredClutch;     // ranges 0.0-1.0
+
+        // Filtered input
+        public double mFilteredThrottle;     // ranges 0.0-1.0
+        public double mFilteredBrake;        // ranges 0.0-1.0
+        public double mFilteredSteering;     // ranges -1.0-1.0 (left to right)
+        public double mFilteredClutch;       // ranges 0.0-1.0
+
+        // Misc
+        public double mSteeringShaftTorque;  // torque around steering shaft
+        public double mFront3rdDeflection;   // deflection at front 3rd spring
+        public double mRear3rdDeflection;    // deflection at rear 3rd spring
+
+        // Aerodynamics
+        public double mFrontWingHeight;      // front wing height
+        public double mFrontRideHeight;      // front ride height
+        public double mRearRideHeight;       // rear ride height
+        public double mDrag;                 // drag
+        public double mFrontDownforce;       // front downforce
+        public double mRearDownforce;        // rear downforce
+
+        // State/damage info
+        public double mFuel;                 // amount of fuel (liters)
+        public double mEngineMaxRPM;         // rev limit
+        public byte mScheduledStops;         // number of scheduled pitstops
+        public byte mOverheating;            // whether overheating icon is shown
+        public byte mDetached;               // whether any parts (besides wheels) have been detached
+        public byte mHeadlights;             // whether headlights are on
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+        public byte[] mDentSeverity;         // dent severity at 8 locations around the car
+        public double mLastImpactET;         // time of last impact
+        public double mLastImpactMagnitude;  // magnitude of last impact
+        public rF2Vec3 mLastImpactPos;       // location of last impact
+
+        // Expanded
+        public double mEngineTorque;         // current engine torque
+        public int mCurrentSector;           // the current sector (zero-based) with the pitlane stored in the sign bit
+        public byte mSpeedLimiter;           // whether speed limiter is on
+        public byte mMaxGears;               // maximum forward gears
+        public byte mFrontTireCompoundIndex; // index within brand
+        public byte mRearTireCompoundIndex;  // index within brand
+        public double mFuelCapacity;         // capacity in liters
+        public byte mFrontFlapActivated;     // whether front flap is activated
+        public byte mRearFlapActivated;      // whether rear flap is activated
+        public byte mRearFlapLegalStatus;    // 0=disallowed, 1=criteria detected but not allowed quite yet, 2=allowed
+        public byte mIgnitionStarter;        // 0=off 1=ignition 2=ignition+starter
+
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 18)]
+        public byte[] mFrontTireCompoundName; // name of front tire compound
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 18)]
+        public byte[] mRearTireCompoundName;  // name of rear tire compound
+
+        public byte mSpeedLimiterAvailable;  // whether speed limiter is available
+        public byte mAntiStallActivated;     // whether (hard) anti-stall is activated
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
+        public byte[] mUnused;               // unused
+
+        public float mVisualSteeringWheelRange; // the *visual* steering wheel range
+        public double mRearBrakeBias;        // fraction of brakes on rear
+        public double mTurboBoostPressure;   // current turbo boost pressure if available
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
+        public float[] mPhysicsToGraphicsOffset; // offset from static CG to graphical center
+        public float mPhysicalSteeringWheelRange; // the *physical* steering wheel range
+
+        public double mBatteryChargeFraction; // Battery charge as fraction [0.0-1.0]
+
+        // electric boost motor
+        public double mElectricBoostMotorTorque; // current torque of boost motor
+        public double mElectricBoostMotorRPM;    // current rpm of boost motor
+        public double mElectricBoostMotorTemperature; // current temperature of boost motor
+        public double mElectricBoostWaterTemperature; // current water temperature of boost motor cooler
+        public byte mElectricBoostMotorState; // 0=unavailable 1=inactive, 2=propulsion, 3=regeneration
+
+        // Future use
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 111)]
+        public byte[] mExpansion;            // for future use
+
+        // Wheel info (front left, front right, rear left, rear right)
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+        public rF2Wheel[] mWheels;           // wheel info
+    }
+
+    // Buffer header structures
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    public struct rF2MappedBufferVersionBlock
+    {
+        public uint mVersionUpdateBegin;     // Incremented right before buffer is written to
+        public uint mVersionUpdateEnd;       // Incremented after buffer write is done
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    public struct rF2MappedBufferHeader
+    {
+        public const int MAX_MAPPED_VEHICLES = 128;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    public struct rF2MappedBufferHeaderWithSize
+    {
+        public int mBytesUpdatedHint;        // How many bytes of the structure were written during the last update
+    }
+
+    // Main telemetry structure (based on official rF2SharedMemoryMapPlugin)
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
     public struct rF2Telemetry
     {
-        public int mVersionUpdateBegin;      // incremented right before updating the rest of the data
-        public int mVersionUpdateEnd;        // incremented after updating the rest of the data
-        public int mBytesUpdatedHint;        // How many bytes of the structure were written during the last update
-        public float mDeltaTime;             // time since last update (seconds)
-        public float mElapsedTime;           // game session time
-        public int mLapNumber;               // current lap number
-        public float mLapStartET;            // time this lap was started
+        // Buffer versioning - IMPORTANT: These must be read first
+        public uint mVersionUpdateBegin;      // Incremented right before buffer is written to
+        public uint mVersionUpdateEnd;        // Incremented after buffer write is done
+        public int mBytesUpdatedHint;         // How many bytes were updated
         
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 128)]
-        public byte[] mVehicleName;          // driver name
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 128)]
-        public byte[] mTrackName;            // track name
+        public int mNumVehicles;              // current number of vehicles
         
+        // Vehicle data array - we'll read the first vehicle directly
+        // Note: The actual array is MAX_MAPPED_VEHICLES size, but we only need the first one
         public rF2VehicleTelemetry mVehicles; // vehicle telemetry data
-        
-        public rF2Telemetry()
-        {
-            mVehicleName = new byte[128];
-            mTrackName = new byte[128];
-            mVehicles = new rF2VehicleTelemetry();
-        }
     }
 
     class Program
@@ -149,6 +235,7 @@ namespace LeMansUltimateCoPilot
             Console.WriteLine("  's' - Show session statistics");
             Console.WriteLine("  'p' - Show reference lap statistics");
             Console.WriteLine("  'b' - Save current best lap as reference");
+            Console.WriteLine("  'v' - Validate telemetry offsets (debug mode)");
             Console.WriteLine("  'd' - Run Voice Driving Coach Demo");
             Console.WriteLine();
 
@@ -299,6 +386,14 @@ namespace LeMansUltimateCoPilot
                             // Save current best lap as reference (if available)
                             SaveBestLapAsReference();
                         }
+                        else if (key.KeyChar == 'v' || key.KeyChar == 'V')
+                        {
+                            // Validate telemetry offsets
+                            if (accessor != null)
+                            {
+                                ValidateTelemetryOffsets(accessor);
+                            }
+                        }
                         else if (key.KeyChar == 'd' || key.KeyChar == 'D')
                         {
                             // Run Voice Driving Coach Demo
@@ -355,15 +450,184 @@ namespace LeMansUltimateCoPilot
         {
             try
             {
-                // Read the structure from shared memory
-                var telemetry = accessor.ReadStruct<rF2Telemetry>(0);
+                // Read version numbers first to check data stability
+                var versionBegin = accessor.ReadUInt32(0);
+                var versionEnd = accessor.ReadUInt32(4);
                 
                 // Check if data is valid (version numbers should be equal when data is stable)
-                if (telemetry.mVersionUpdateBegin == telemetry.mVersionUpdateEnd)
+                if (versionBegin != versionEnd)
                 {
-                    return telemetry;
+                    return null;
                 }
-                return null;
+
+                // Create telemetry structure and read header
+                var telemetry = new rF2Telemetry();
+                telemetry.mVersionUpdateBegin = versionBegin;
+                telemetry.mVersionUpdateEnd = versionEnd;
+                telemetry.mBytesUpdatedHint = accessor.ReadInt32(8);
+                telemetry.mNumVehicles = accessor.ReadInt32(12);
+
+                // If no vehicles, return null
+                if (telemetry.mNumVehicles <= 0)
+                {
+                    return null;
+                }
+
+                // Create vehicle telemetry structure
+                var vehicle = new rF2VehicleTelemetry();
+                
+                // Initialize arrays
+                vehicle.mVehicleName = new byte[64];
+                vehicle.mTrackName = new byte[64];
+                vehicle.mOri = new rF2Vec3[3];
+                vehicle.mDentSeverity = new byte[8];
+                vehicle.mFrontTireCompoundName = new byte[18];
+                vehicle.mRearTireCompoundName = new byte[18];
+                vehicle.mUnused = new byte[2];
+                vehicle.mPhysicsToGraphicsOffset = new float[3];
+                vehicle.mExpansion = new byte[111];
+                vehicle.mWheels = new rF2Wheel[4];
+
+                // Initialize wheel data
+                for (int i = 0; i < 4; i++)
+                {
+                    vehicle.mWheels[i].mTemperature = new double[3];
+                    vehicle.mWheels[i].mTireInnerLayerTemperature = new double[3];
+                    vehicle.mWheels[i].mTerrainName = new byte[16];
+                    vehicle.mWheels[i].mExpansion = new byte[24];
+                }
+
+                // Use struct marshalling to read the entire first vehicle data
+                // The vehicle data starts at offset 16 (after the header)
+                int vehicleDataOffset = 16;
+                
+                // Read the vehicle data using marshalling
+                var vehicleSize = Marshal.SizeOf<rF2VehicleTelemetry>();
+                var vehicleData = new byte[vehicleSize];
+                
+                try
+                {
+                    accessor.ReadArray(vehicleDataOffset, vehicleData, 0, vehicleSize);
+                    
+                    // Pin the byte array and marshal it to the struct
+                    var handle = GCHandle.Alloc(vehicleData, GCHandleType.Pinned);
+                    try
+                    {
+                        vehicle = Marshal.PtrToStructure<rF2VehicleTelemetry>(handle.AddrOfPinnedObject());
+                    }
+                    finally
+                    {
+                        handle.Free();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Warning: Could not read full vehicle data using marshalling: {ex.Message}");
+                    
+                    // Fallback to manual reading of key fields
+                    vehicle.mID = accessor.ReadInt32(vehicleDataOffset + 0);
+                    vehicle.mDeltaTime = accessor.ReadDouble(vehicleDataOffset + 4);
+                    vehicle.mElapsedTime = accessor.ReadDouble(vehicleDataOffset + 12);
+                    vehicle.mLapNumber = accessor.ReadInt32(vehicleDataOffset + 20);
+                    vehicle.mLapStartET = accessor.ReadDouble(vehicleDataOffset + 24);
+                    
+                    // Read vehicle and track names
+                    accessor.ReadArray(vehicleDataOffset + 32, vehicle.mVehicleName, 0, 64);
+                    accessor.ReadArray(vehicleDataOffset + 96, vehicle.mTrackName, 0, 64);
+                    
+                    // Read position data
+                    var posOffset = vehicleDataOffset + 160;
+                    vehicle.mPos.x = accessor.ReadDouble(posOffset);
+                    vehicle.mPos.y = accessor.ReadDouble(posOffset + 8);
+                    vehicle.mPos.z = accessor.ReadDouble(posOffset + 16);
+                    
+                    // Read velocity data
+                    vehicle.mLocalVel.x = accessor.ReadDouble(posOffset + 24);
+                    vehicle.mLocalVel.y = accessor.ReadDouble(posOffset + 32);
+                    vehicle.mLocalVel.z = accessor.ReadDouble(posOffset + 40);
+                    
+                    // Read acceleration data
+                    vehicle.mLocalAccel.x = accessor.ReadDouble(posOffset + 48);
+                    vehicle.mLocalAccel.y = accessor.ReadDouble(posOffset + 56);
+                    vehicle.mLocalAccel.z = accessor.ReadDouble(posOffset + 64);
+                    
+                    // Skip orientation matrix (9 doubles = 72 bytes) and local rotation data
+                    var engineDataOffset = posOffset + 72 + 72 + 48;
+                    
+                    // Read engine data
+                    vehicle.mGear = accessor.ReadInt32(engineDataOffset);
+                    vehicle.mEngineRPM = accessor.ReadDouble(engineDataOffset + 4);
+                    vehicle.mEngineWaterTemp = accessor.ReadDouble(engineDataOffset + 12);
+                    vehicle.mEngineOilTemp = accessor.ReadDouble(engineDataOffset + 20);
+                    vehicle.mClutchRPM = accessor.ReadDouble(engineDataOffset + 28);
+                    
+                    // Read input data
+                    var inputDataOffset = engineDataOffset + 36;
+                    vehicle.mUnfilteredThrottle = accessor.ReadDouble(inputDataOffset);
+                    vehicle.mUnfilteredBrake = accessor.ReadDouble(inputDataOffset + 8);
+                    vehicle.mUnfilteredSteering = accessor.ReadDouble(inputDataOffset + 16);
+                    vehicle.mUnfilteredClutch = accessor.ReadDouble(inputDataOffset + 24);
+                    
+                    vehicle.mFilteredThrottle = accessor.ReadDouble(inputDataOffset + 32);
+                    vehicle.mFilteredBrake = accessor.ReadDouble(inputDataOffset + 40);
+                    vehicle.mFilteredSteering = accessor.ReadDouble(inputDataOffset + 48);
+                    vehicle.mFilteredClutch = accessor.ReadDouble(inputDataOffset + 56);
+                    
+                    // Read additional fields
+                    var miscDataOffset = inputDataOffset + 64;
+                    vehicle.mSteeringShaftTorque = accessor.ReadDouble(miscDataOffset);
+                    vehicle.mFront3rdDeflection = accessor.ReadDouble(miscDataOffset + 8);
+                    vehicle.mRear3rdDeflection = accessor.ReadDouble(miscDataOffset + 16);
+                    
+                    // Read aerodynamics data
+                    vehicle.mFrontWingHeight = accessor.ReadDouble(miscDataOffset + 24);
+                    vehicle.mFrontRideHeight = accessor.ReadDouble(miscDataOffset + 32);
+                    vehicle.mRearRideHeight = accessor.ReadDouble(miscDataOffset + 40);
+                    vehicle.mDrag = accessor.ReadDouble(miscDataOffset + 48);
+                    vehicle.mFrontDownforce = accessor.ReadDouble(miscDataOffset + 56);
+                    vehicle.mRearDownforce = accessor.ReadDouble(miscDataOffset + 64);
+                    
+                    // Read fuel and engine data
+                    vehicle.mFuel = accessor.ReadDouble(miscDataOffset + 72);
+                    vehicle.mEngineMaxRPM = accessor.ReadDouble(miscDataOffset + 80);
+                    
+                    // Read some basic wheel data if possible
+                    try
+                    {
+                        // The wheel data is at the end of the vehicle struct
+                        // This is a rough estimate - wheel data starts very late in the struct
+                        var wheelDataOffset = vehicleDataOffset + 1000; // Rough estimate
+                        
+                        for (int i = 0; i < 4; i++)
+                        {
+                            var wheelOffset = wheelDataOffset + i * Marshal.SizeOf<rF2Wheel>();
+                            vehicle.mWheels[i].mRotation = accessor.ReadDouble(wheelOffset + 40); // Rotation is at offset 40 in rF2Wheel
+                            vehicle.mWheels[i].mTireLoad = accessor.ReadDouble(wheelOffset + 104); // TireLoad is at offset 104
+                            vehicle.mWheels[i].mPressure = accessor.ReadDouble(wheelOffset + 112); // Pressure is at offset 112
+                            
+                            // Read tire temperature (3 doubles at offset 120)
+                            vehicle.mWheels[i].mTemperature[0] = accessor.ReadDouble(wheelOffset + 120);
+                            vehicle.mWheels[i].mTemperature[1] = accessor.ReadDouble(wheelOffset + 128);
+                            vehicle.mWheels[i].mTemperature[2] = accessor.ReadDouble(wheelOffset + 136);
+                        }
+                    }
+                    catch
+                    {
+                        // If wheel data reading fails, initialize with defaults
+                        for (int i = 0; i < 4; i++)
+                        {
+                            vehicle.mWheels[i].mRotation = 0;
+                            vehicle.mWheels[i].mTireLoad = 0;
+                            vehicle.mWheels[i].mPressure = 0;
+                            vehicle.mWheels[i].mTemperature[0] = 0;
+                            vehicle.mWheels[i].mTemperature[1] = 0;
+                            vehicle.mWheels[i].mTemperature[2] = 0;
+                        }
+                    }
+                }
+
+                telemetry.mVehicles = vehicle;
+                return telemetry;
             }
             catch (Exception ex)
             {
@@ -459,7 +723,7 @@ namespace LeMansUltimateCoPilot
             }
 
             // Controls reminder
-            Console.WriteLine("CONTROLS: 'q'=Quit | 'r'=Reconnect | 'l'=Toggle Logging | 's'=Statistics | 'p'=Reference Laps");
+            Console.WriteLine("CONTROLS: 'q'=Quit | 'r'=Reconnect | 'l'=Toggle Logging | 's'=Statistics | 'p'=Reference Laps | 'v'=Validate Offsets");
             
             // Clear any remaining lines
             for (int i = 0; i < 5; i++)
@@ -653,6 +917,63 @@ namespace LeMansUltimateCoPilot
             Console.WriteLine("  'p' - Show reference lap statistics");
             Console.WriteLine("  'b' - Save current best lap as reference");
             Console.WriteLine("  'd' - Run Voice Driving Coach Demo");
+            Console.WriteLine();
+        }
+
+        /// <summary>
+        /// Helper method to validate telemetry data and test different offsets
+        /// Use this method to verify the analyzer findings
+        /// </summary>
+        static void ValidateTelemetryOffsets(MemoryMappedViewAccessor accessor)
+        {
+            Console.WriteLine("🔍 VALIDATING TELEMETRY OFFSETS");
+            Console.WriteLine("===============================");
+            
+            // Test different offset candidates for key fields
+            var testOffsets = new Dictionary<string, int[]>
+            {
+                {"Engine RPM", new[] { 284, 300, 316, 332, 348, 364, 380 }},
+                {"Gear", new[] { 280, 296, 312, 328, 344, 360, 376 }},
+                {"Throttle", new[] { 308, 324, 340, 356, 372, 388, 404 }},
+                {"Brake", new[] { 312, 328, 344, 360, 376, 392, 408 }},
+                {"Steering", new[] { 316, 332, 348, 364, 380, 396, 412 }}
+            };
+            
+            Console.WriteLine("Testing offset candidates for key telemetry fields:");
+            Console.WriteLine();
+            
+            foreach (var field in testOffsets)
+            {
+                Console.WriteLine($"{field.Key}:");
+                foreach (var offset in field.Value)
+                {
+                    try
+                    {
+                        if (field.Key == "Gear")
+                        {
+                            var value = accessor.ReadInt32(offset);
+                            Console.WriteLine($"  Offset {offset:X3}h ({offset,4}): {value,8} (as int)");
+                        }
+                        else
+                        {
+                            var value = accessor.ReadSingle(offset);
+                            Console.WriteLine($"  Offset {offset:X3}h ({offset,4}): {value,8:F2} (as float)");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"  Offset {offset:X3}h ({offset,4}): ERROR - {ex.Message}");
+                    }
+                }
+                Console.WriteLine();
+            }
+            
+            Console.WriteLine("💡 Compare these values with what you see in-game!");
+            Console.WriteLine("💡 The correct offsets should show realistic values:");
+            Console.WriteLine("   - RPM: 0-8000 for most cars");
+            Console.WriteLine("   - Gear: -1 (reverse), 0 (neutral), 1-8 (forward)");
+            Console.WriteLine("   - Throttle/Brake: 0.0-1.0");
+            Console.WriteLine("   - Steering: -1.0 to 1.0");
             Console.WriteLine();
         }
 

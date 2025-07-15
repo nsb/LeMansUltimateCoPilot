@@ -11,6 +11,10 @@
 
   <ItemGroup>
     <Compile Remove="LeMansUltimateCoPilot.Tests\**" />
+    <Compile Remove="StandaloneAnalyzer.cs" />
+    <Compile Remove="MemoryAnalyzer.cs" />
+    <Compile Remove="MemoryAnalyzerApp.cs" />
+    <Compile Remove="TestStructure.cs" />
     <EmbeddedResource Remove="LeMansUltimateCoPilot.Tests\**" />
     <None Remove="LeMansUltimateCoPilot.Tests\**" />
   </ItemGroup>

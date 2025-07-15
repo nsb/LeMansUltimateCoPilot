@@ -113,63 +113,64 @@ namespace LeMansUltimateCoPilot.Models
         /// </summary>
         public static EnhancedTelemetryData FromRaw(rF2Telemetry rawTelemetry, DateTime timestamp)
         {
+            var vehicle = rawTelemetry.mVehicles;
             var data = new EnhancedTelemetryData
             {
                 Timestamp = timestamp,
-                SessionTime = rawTelemetry.mElapsedTime,
-                LapTime = rawTelemetry.mLapStartET > 0 ? rawTelemetry.mElapsedTime - rawTelemetry.mLapStartET : 0,
-                LapNumber = rawTelemetry.mLapNumber,
-                DeltaTime = rawTelemetry.mDeltaTime,
+                SessionTime = (float)vehicle.mElapsedTime,
+                LapTime = vehicle.mLapStartET > 0 ? (float)(vehicle.mElapsedTime - vehicle.mLapStartET) : 0,
+                LapNumber = vehicle.mLapNumber,
+                DeltaTime = (float)vehicle.mDeltaTime,
 
                 // Position and motion
-                PositionX = rawTelemetry.mVehicles.mPos_x,
-                PositionY = rawTelemetry.mVehicles.mPos_y,
-                PositionZ = rawTelemetry.mVehicles.mPos_z,
-                VelocityX = rawTelemetry.mVehicles.mLocalVel_x,
-                VelocityY = rawTelemetry.mVehicles.mLocalVel_y,
-                VelocityZ = rawTelemetry.mVehicles.mLocalVel_z,
-                AccelerationX = rawTelemetry.mVehicles.mLocalAccel_x,
-                AccelerationY = rawTelemetry.mVehicles.mLocalAccel_y,
-                AccelerationZ = rawTelemetry.mVehicles.mLocalAccel_z,
+                PositionX = (float)vehicle.mPos.x,
+                PositionY = (float)vehicle.mPos.y,
+                PositionZ = (float)vehicle.mPos.z,
+                VelocityX = (float)vehicle.mLocalVel.x,
+                VelocityY = (float)vehicle.mLocalVel.y,
+                VelocityZ = (float)vehicle.mLocalVel.z,
+                AccelerationX = (float)vehicle.mLocalAccel.x,
+                AccelerationY = (float)vehicle.mLocalAccel.y,
+                AccelerationZ = (float)vehicle.mLocalAccel.z,
 
                 // Vehicle dynamics
-                Gear = rawTelemetry.mVehicles.mGear,
-                EngineRPM = rawTelemetry.mVehicles.mEngineRPM,
-                MaxRPM = rawTelemetry.mVehicles.mEngineMaxRPM,
+                Gear = vehicle.mGear,
+                EngineRPM = (float)vehicle.mEngineRPM,
+                MaxRPM = (float)vehicle.mEngineMaxRPM,
 
                 // Driver inputs
-                ThrottleInput = rawTelemetry.mVehicles.mFilteredThrottle,
-                BrakeInput = rawTelemetry.mVehicles.mFilteredBrake,
-                SteeringInput = rawTelemetry.mVehicles.mFilteredSteering,
-                ClutchInput = rawTelemetry.mVehicles.mFilteredClutch,
-                UnfilteredThrottle = rawTelemetry.mVehicles.mUnfilteredThrottle,
-                UnfilteredBrake = rawTelemetry.mVehicles.mUnfilteredBrake,
-                UnfilteredSteering = rawTelemetry.mVehicles.mUnfilteredSteering,
-                UnfilteredClutch = rawTelemetry.mVehicles.mUnfilteredClutch,
+                ThrottleInput = (float)vehicle.mFilteredThrottle,
+                BrakeInput = (float)vehicle.mFilteredBrake,
+                SteeringInput = (float)vehicle.mFilteredSteering,
+                ClutchInput = (float)vehicle.mFilteredClutch,
+                UnfilteredThrottle = (float)vehicle.mUnfilteredThrottle,
+                UnfilteredBrake = (float)vehicle.mUnfilteredBrake,
+                UnfilteredSteering = (float)vehicle.mUnfilteredSteering,
+                UnfilteredClutch = (float)vehicle.mUnfilteredClutch,
 
                 // Forces
-                SteeringTorque = rawTelemetry.mVehicles.mSteeringShaftTorque,
+                SteeringTorque = (float)vehicle.mSteeringShaftTorque,
 
                 // Temperatures
-                WaterTemperature = rawTelemetry.mVehicles.mEngineWaterTemp,
-                OilTemperature = rawTelemetry.mVehicles.mEngineOilTemp,
+                WaterTemperature = (float)vehicle.mEngineWaterTemp,
+                OilTemperature = (float)vehicle.mEngineOilTemp,
 
                 // Aerodynamics
-                FrontDownforce = rawTelemetry.mVehicles.mFrontDownforce,
-                RearDownforce = rawTelemetry.mVehicles.mRearDownforce,
-                Drag = rawTelemetry.mVehicles.mDrag,
-                FrontRideHeight = rawTelemetry.mVehicles.mFrontRideHeight,
-                RearRideHeight = rawTelemetry.mVehicles.mRearRideHeight,
+                FrontDownforce = (float)vehicle.mFrontDownforce,
+                RearDownforce = (float)vehicle.mRearDownforce,
+                Drag = (float)vehicle.mDrag,
+                FrontRideHeight = (float)vehicle.mFrontRideHeight,
+                RearRideHeight = (float)vehicle.mRearRideHeight,
 
                 // Fuel
-                FuelLevel = rawTelemetry.mVehicles.mFuel,
-                PitLimiterActive = rawTelemetry.mVehicles.mPitLimiter > 0,
-                PitSpeedLimit = rawTelemetry.mVehicles.mPitSpeedLimit,
+                FuelLevel = (float)vehicle.mFuel,
+                PitLimiterActive = vehicle.mSpeedLimiter > 0,
+                PitSpeedLimit = 0, // Not directly available in current struct
 
                 // Track info
-                VehicleName = System.Text.Encoding.ASCII.GetString(rawTelemetry.mVehicleName).TrimEnd('\0'),
-                TrackName = System.Text.Encoding.ASCII.GetString(rawTelemetry.mTrackName).TrimEnd('\0'),
-                IsValidLap = rawTelemetry.mLapNumber > 0 && rawTelemetry.mLapStartET > 0
+                VehicleName = System.Text.Encoding.ASCII.GetString(vehicle.mVehicleName).TrimEnd('\0'),
+                TrackName = System.Text.Encoding.ASCII.GetString(vehicle.mTrackName).TrimEnd('\0'),
+                IsValidLap = vehicle.mLapNumber > 0 && vehicle.mLapStartET > 0
             };
 
             // Calculate speed in both units
@@ -181,53 +182,50 @@ namespace LeMansUltimateCoPilot.Models
             data.LateralG = data.AccelerationX / 9.81f; // Left/right
             data.VerticalG = data.AccelerationY / 9.81f; // Up/down
 
-            // Set tire data if available
-            if (rawTelemetry.mVehicles.mTireTemp != null && rawTelemetry.mVehicles.mTireTemp.Length >= 4)
+            // Set tire data from wheel array
+            if (vehicle.mWheels != null && vehicle.mWheels.Length >= 4)
             {
-                data.TireTemperatureFL = rawTelemetry.mVehicles.mTireTemp[0];
-                data.TireTemperatureFR = rawTelemetry.mVehicles.mTireTemp[1];
-                data.TireTemperatureRL = rawTelemetry.mVehicles.mTireTemp[2];
-                data.TireTemperatureRR = rawTelemetry.mVehicles.mTireTemp[3];
-            }
+                // FL, FR, RL, RR (Front Left, Front Right, Rear Left, Rear Right)
+                data.TireTemperatureFL = (float)(vehicle.mWheels[0].mTemperature?[1] ?? 0); // Center temperature
+                data.TireTemperatureFR = (float)(vehicle.mWheels[1].mTemperature?[1] ?? 0);
+                data.TireTemperatureRL = (float)(vehicle.mWheels[2].mTemperature?[1] ?? 0);
+                data.TireTemperatureRR = (float)(vehicle.mWheels[3].mTemperature?[1] ?? 0);
 
-            if (rawTelemetry.mVehicles.mTirePressure != null && rawTelemetry.mVehicles.mTirePressure.Length >= 4)
-            {
-                data.TirePressureFL = rawTelemetry.mVehicles.mTirePressure[0];
-                data.TirePressureFR = rawTelemetry.mVehicles.mTirePressure[1];
-                data.TirePressureRL = rawTelemetry.mVehicles.mTirePressure[2];
-                data.TirePressureRR = rawTelemetry.mVehicles.mTirePressure[3];
-            }
+                // Convert from Kelvin to Celsius
+                data.TireTemperatureFL = data.TireTemperatureFL > 0 ? (float)(data.TireTemperatureFL - 273.15) : 0;
+                data.TireTemperatureFR = data.TireTemperatureFR > 0 ? (float)(data.TireTemperatureFR - 273.15) : 0;
+                data.TireTemperatureRL = data.TireTemperatureRL > 0 ? (float)(data.TireTemperatureRL - 273.15) : 0;
+                data.TireTemperatureRR = data.TireTemperatureRR > 0 ? (float)(data.TireTemperatureRR - 273.15) : 0;
 
-            if (rawTelemetry.mVehicles.mTireLoad != null && rawTelemetry.mVehicles.mTireLoad.Length >= 4)
-            {
-                data.TireLoadFL = rawTelemetry.mVehicles.mTireLoad[0];
-                data.TireLoadFR = rawTelemetry.mVehicles.mTireLoad[1];
-                data.TireLoadRL = rawTelemetry.mVehicles.mTireLoad[2];
-                data.TireLoadRR = rawTelemetry.mVehicles.mTireLoad[3];
-            }
+                // Tire pressure (already in kPa)
+                data.TirePressureFL = (float)vehicle.mWheels[0].mPressure;
+                data.TirePressureFR = (float)vehicle.mWheels[1].mPressure;
+                data.TirePressureRL = (float)vehicle.mWheels[2].mPressure;
+                data.TirePressureRR = (float)vehicle.mWheels[3].mPressure;
 
-            if (rawTelemetry.mVehicles.mTireGripFract != null && rawTelemetry.mVehicles.mTireGripFract.Length >= 4)
-            {
-                data.TireGripFL = rawTelemetry.mVehicles.mTireGripFract[0];
-                data.TireGripFR = rawTelemetry.mVehicles.mTireGripFract[1];
-                data.TireGripRL = rawTelemetry.mVehicles.mTireGripFract[2];
-                data.TireGripRR = rawTelemetry.mVehicles.mTireGripFract[3];
-            }
+                // Tire load (Newtons)
+                data.TireLoadFL = (float)vehicle.mWheels[0].mTireLoad;
+                data.TireLoadFR = (float)vehicle.mWheels[1].mTireLoad;
+                data.TireLoadRL = (float)vehicle.mWheels[2].mTireLoad;
+                data.TireLoadRR = (float)vehicle.mWheels[3].mTireLoad;
 
-            if (rawTelemetry.mVehicles.mSuspensionDeflection != null && rawTelemetry.mVehicles.mSuspensionDeflection.Length >= 4)
-            {
-                data.SuspensionDeflectionFL = rawTelemetry.mVehicles.mSuspensionDeflection[0];
-                data.SuspensionDeflectionFR = rawTelemetry.mVehicles.mSuspensionDeflection[1];
-                data.SuspensionDeflectionRL = rawTelemetry.mVehicles.mSuspensionDeflection[2];
-                data.SuspensionDeflectionRR = rawTelemetry.mVehicles.mSuspensionDeflection[3];
-            }
+                // Tire grip fraction
+                data.TireGripFL = (float)vehicle.mWheels[0].mGripFract;
+                data.TireGripFR = (float)vehicle.mWheels[1].mGripFract;
+                data.TireGripRL = (float)vehicle.mWheels[2].mGripFract;
+                data.TireGripRR = (float)vehicle.mWheels[3].mGripFract;
 
-            if (rawTelemetry.mVehicles.mSuspensionVelocity != null && rawTelemetry.mVehicles.mSuspensionVelocity.Length >= 4)
-            {
-                data.SuspensionVelocityFL = rawTelemetry.mVehicles.mSuspensionVelocity[0];
-                data.SuspensionVelocityFR = rawTelemetry.mVehicles.mSuspensionVelocity[1];
-                data.SuspensionVelocityRL = rawTelemetry.mVehicles.mSuspensionVelocity[2];
-                data.SuspensionVelocityRR = rawTelemetry.mVehicles.mSuspensionVelocity[3];
+                // Suspension deflection (meters)
+                data.SuspensionDeflectionFL = (float)vehicle.mWheels[0].mSuspensionDeflection;
+                data.SuspensionDeflectionFR = (float)vehicle.mWheels[1].mSuspensionDeflection;
+                data.SuspensionDeflectionRL = (float)vehicle.mWheels[2].mSuspensionDeflection;
+                data.SuspensionDeflectionRR = (float)vehicle.mWheels[3].mSuspensionDeflection;
+
+                // Suspension velocity (not directly available in rF2Wheel, set to 0)
+                data.SuspensionVelocityFL = 0;
+                data.SuspensionVelocityFR = 0;
+                data.SuspensionVelocityRL = 0;
+                data.SuspensionVelocityRR = 0;
             }
 
             // Calculate additional derived values
