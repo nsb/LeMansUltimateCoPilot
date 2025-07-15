@@ -2,8 +2,11 @@ using System;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Runtime.CompilerServices;
 using LeMansUltimateCoPilot.Models;
 using LeMansUltimateCoPilot.Services;
+
+[assembly: InternalsVisibleTo("LeMansUltimateCoPilot.Tests")]
 
 namespace LeMansUltimateCoPilot
 {
@@ -209,7 +212,7 @@ namespace LeMansUltimateCoPilot
         public rF2VehicleTelemetry mVehicles; // vehicle telemetry data
     }
 
-    class Program
+    public class Program
     {
         private static bool _running = true;
         private static TelemetryLogger? _telemetryLogger;
@@ -582,7 +585,7 @@ namespace LeMansUltimateCoPilot
         private static DateTime _lastPlayerLookup = DateTime.MinValue;
         private static readonly TimeSpan PlayerLookupCacheTime = TimeSpan.FromSeconds(2);
 
-        static int FindPlayerVehicleID()
+        public static int FindPlayerVehicleID()
         {
             // Use cached value if recent
             if (_cachedPlayerVehicleID != -1 && 
@@ -1574,7 +1577,7 @@ namespace LeMansUltimateCoPilot
             Console.WriteLine();
         }
 
-        static void TestPlayerDetection()
+        public static void TestPlayerDetection()
         {
             Console.Clear();
             Console.WriteLine("🧪 TESTING PLAYER DETECTION LOGIC");
