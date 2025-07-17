@@ -5,6 +5,8 @@ using System.Threading;
 using System.Runtime.CompilerServices;
 using LeMansUltimateCoPilot.Models;
 using LeMansUltimateCoPilot.Services;
+using LeMansUltimateCoPilot.Analysis;
+using LeMansUltimateCoPilot.Logging;
 
 [assembly: InternalsVisibleTo("LeMansUltimateCoPilot.Tests")]
 
@@ -218,6 +220,8 @@ namespace LeMansUltimateCoPilot
         private static TelemetryLogger? _telemetryLogger;
         private static LapDetector? _lapDetector;
         private static ReferenceLapManager? _referenceLapManager;
+        private static CorneringAnalysisEngine? _corneringAnalysisEngine;
+        private static EnhancedTelemetryLogger? _enhancedTelemetryLogger;
         private static readonly string[] SharedMemoryNames = {
             "$rFactor2SMMP_Telemetry$",
             "$rFactor2SMMP_Scoring$",
@@ -248,6 +252,12 @@ namespace LeMansUltimateCoPilot
             _telemetryLogger.LogMessage += (sender, message) => Console.WriteLine($"[LOG] {message}");
             _telemetryLogger.SessionStarted += (sender, file) => Console.WriteLine($"[SESSION] Started logging to: {file}");
             _telemetryLogger.SessionStopped += (sender, file) => Console.WriteLine($"[SESSION] Stopped logging. File: {file}");
+
+            // Initialize enhanced telemetry logger for AI coaching
+            _enhancedTelemetryLogger = new EnhancedTelemetryLogger();
+
+            // Initialize cornering analysis engine
+            _corneringAnalysisEngine = new CorneringAnalysisEngine();
 
             // Initialize reference lap manager
             _referenceLapManager = new ReferenceLapManager();
@@ -285,10 +295,11 @@ namespace LeMansUltimateCoPilot
             {
                 Console.WriteLine($"[REFERENCE] Loaded {loadedLaps} reference laps");
             }
-            _telemetryLogger = new TelemetryLogger();
-            _telemetryLogger.LogMessage += (sender, message) => Console.WriteLine($"[LOG] {message}");
-            _telemetryLogger.SessionStarted += (sender, file) => Console.WriteLine($"[SESSION] Started logging to: {file}");
-            _telemetryLogger.SessionStopped += (sender, file) => Console.WriteLine($"[SESSION] Stopped logging. File: {file}");
+
+            // Start enhanced telemetry logging
+            _enhancedTelemetryLogger.StartLogging();
+            Console.WriteLine($"[AI COACH] Enhanced telemetry logging started");
+            Console.WriteLine($"[AI COACH] Cornering analysis engine initialized");
 
             // Set up console key handler
             Console.CancelKeyPress += (sender, e) => {
@@ -300,6 +311,8 @@ namespace LeMansUltimateCoPilot
             ReadTelemetryLoop();
 
             // Cleanup
+            _enhancedTelemetryLogger?.StopLogging();
+            _enhancedTelemetryLogger?.LogSessionSummary();
             _telemetryLogger?.Dispose();
         }
 
@@ -338,10 +351,28 @@ namespace LeMansUltimateCoPilot
                             // Convert to enhanced telemetry data
                             var enhancedData = EnhancedTelemetryData.FromRaw(rawTelemetry.Value, DateTime.Now);
                             
+                            // Update session information for enhanced logging
+                            _enhancedTelemetryLogger?.UpdateSessionInfo(enhancedData.TrackName, enhancedData.VehicleName);
+                            
                             // Log data if logging is active
                             if (_telemetryLogger?.IsLogging == true)
                             {
                                 _telemetryLogger.LogTelemetryData(enhancedData);
+                            }
+
+                            // Enhanced telemetry logging
+                            _enhancedTelemetryLogger?.LogTelemetryData(enhancedData);
+
+                            // Process cornering analysis
+                            if (_corneringAnalysisEngine != null)
+                            {
+                                var corneringResult = _corneringAnalysisEngine.AnalyzeCorner(enhancedData);
+                                
+                                // Log cornering analysis
+                                _enhancedTelemetryLogger?.LogCorneringAnalysis(corneringResult);
+                                
+                                // Display coaching feedback
+                                DisplayCorneringFeedback(corneringResult);
                             }
 
                             // Process lap detection
@@ -1557,7 +1588,7 @@ namespace LeMansUltimateCoPilot
                         else
                         {
                             var value = accessor.ReadSingle(offset);
-                            Console.WriteLine($"  Offset {offset:X3}h ({offset,4}): {value,8:F2} (as float)");
+                            Console.WriteLine($"   Offset {offset:X3}h ({offset,4}): {value,8:F2} (as float)");
                         }
                     }
                     catch (Exception ex)
@@ -1671,7 +1702,37 @@ namespace LeMansUltimateCoPilot
             Console.Clear();
         }
 
-        // ...existing code...
+        static void DisplayCorneringFeedback(CorneringAnalysisResult result)
+        {
+            if (result.CoachingFeedback.Any())
+            {
+                // Display coaching feedback only for important messages
+                var importantFeedback = result.CoachingFeedback
+                    .Where(f => f.Priority == FeedbackPriority.High || f.Priority == FeedbackPriority.Critical)
+                    .Take(3); // Limit to top 3 messages
+
+                foreach (var feedback in importantFeedback)
+                {
+                    var icon = feedback.Priority == FeedbackPriority.Critical ? "⚠️" : "💡";
+                    Console.WriteLine($"{icon} [COACH] {feedback.Message}");
+                }
+            }
+
+            // Display corner information briefly
+            if (result.IsInCorner)
+            {
+                var directionIcon = result.CornerDirection == CornerDirection.Left ? "⬅️" : "➡️";
+                var phaseText = result.CornerPhase switch
+                {
+                    CornerPhase.Entry => "Entry",
+                    CornerPhase.Apex => "Apex",
+                    CornerPhase.Exit => "Exit",
+                    _ => "Unknown"
+                };
+
+                Console.WriteLine($"{directionIcon} [CORNER] {phaseText} - {result.CurrentSpeed:F1} km/h | {result.CurrentLateralG:F2}g");
+            }
+        }
     }
 
     // Extension method for reading structs from MemoryMappedViewAccessor

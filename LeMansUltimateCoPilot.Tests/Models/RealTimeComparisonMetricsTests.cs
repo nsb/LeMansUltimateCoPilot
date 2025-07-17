@@ -171,7 +171,7 @@ namespace LeMansUltimateCoPilot.Tests.Models
             metrics.SegmentTimeDeltas[1] = 0.5;  // 0.5s slower
             metrics.SegmentTimeDeltas[2] = -0.3; // 0.3s faster
             metrics.SegmentTimeDeltas[3] = 0.2;  // 0.2s slower
-            // Total delta: 0.4s slower
+            // Total delta: 0.4fs slower
 
             performance = metrics.CalculateOverallPerformance();
             var expectedPerformance = Math.Max(0, (90.0 - 0.4) / 90.0) * 100; // Should be about 99.56%
@@ -399,3 +399,4 @@ namespace LeMansUltimateCoPilot.Tests.Models
         }
     }
 }
+

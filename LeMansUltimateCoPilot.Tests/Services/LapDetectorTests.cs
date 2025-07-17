@@ -277,7 +277,7 @@ namespace LeMansUltimateCoPilot.Tests.Services
                 float lapProgress;
                 if (i >= dataPoints - 3) // Last 3 data points
                 {
-                    // Simulate crossing finish line: 0.95 -> 0.98 -> 0.05 (crossing the line)
+                    // Simulate crossing finish line: 0.95f -> 0.98 -> 0.05 (crossing the line)
                     lapProgress = i == dataPoints - 1 ? 0.05f : 0.95f + (i - (dataPoints - 3)) * 0.01f;
                 }
                 else
@@ -304,3 +304,4 @@ namespace LeMansUltimateCoPilot.Tests.Services
         }
     }
 }
+
