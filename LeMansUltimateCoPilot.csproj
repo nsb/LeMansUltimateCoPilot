@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.SemanticKernel" Version="1.15.1" />
     <PackageReference Include="System.Speech" Version="8.0.0" />
   </ItemGroup>
 
