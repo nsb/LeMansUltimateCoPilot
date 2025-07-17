@@ -1287,8 +1287,8 @@ namespace LeMansUltimateCoPilot
 
             // Enhanced tire data
             Console.WriteLine("TIRE PRESSURE (kPa):");
-            Console.WriteLine($"  FL/FR:  {telemetry.TirePressureFL / 1000:F1} / {telemetry.TirePressureFR / 1000:F1}");
-            Console.WriteLine($"  RL/RR:  {telemetry.TirePressureRL / 1000:F1} / {telemetry.TirePressureRR / 1000:F1}");
+            Console.WriteLine($"  FL/FR:  {telemetry.TirePressureFL:F1} / {telemetry.TirePressureFR:F1}");
+            Console.WriteLine($"  RL/RR:  {telemetry.TirePressureRL:F1} / {telemetry.TirePressureRR:F1}");
             Console.WriteLine();
 
             // Lap progress and reference lap info

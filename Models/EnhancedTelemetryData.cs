@@ -51,8 +51,12 @@ namespace LeMansUltimateCoPilot.Models
         public float SteeringTorque { get; set; }
 
         // Temperatures
-        public float WaterTemperature { get; set; }
-        public float OilTemperature { get; set; }
+        public float WaterTemperature { get; set; } // Not available in Le Mans Ultimate
+        public float OilTemperature { get; set; } // Not available in Le Mans Ultimate
+        public float BrakeTemperatureFL { get; set; } // Working alternative - brake temperatures
+        public float BrakeTemperatureFR { get; set; }
+        public float BrakeTemperatureRL { get; set; }
+        public float BrakeTemperatureRR { get; set; }
         public float TireTemperatureFL { get; set; }
         public float TireTemperatureFR { get; set; }
         public float TireTemperatureRL { get; set; }
@@ -63,10 +67,14 @@ namespace LeMansUltimateCoPilot.Models
         public float TirePressureFR { get; set; }
         public float TirePressureRL { get; set; }
         public float TirePressureRR { get; set; }
-        public float TireLoadFL { get; set; }
-        public float TireLoadFR { get; set; }
-        public float TireLoadRL { get; set; }
-        public float TireLoadRR { get; set; }
+        public float TireLoadFL { get; set; } // Not available in Le Mans Ultimate
+        public float TireLoadFR { get; set; } // Not available in Le Mans Ultimate
+        public float TireLoadRL { get; set; } // Not available in Le Mans Ultimate
+        public float TireLoadRR { get; set; } // Not available in Le Mans Ultimate
+        public float SuspensionForceFL { get; set; } // Working alternative - suspension forces
+        public float SuspensionForceFR { get; set; }
+        public float SuspensionForceRL { get; set; }
+        public float SuspensionForceRR { get; set; }
         public float TireGripFL { get; set; }
         public float TireGripFR { get; set; }
         public float TireGripRL { get; set; }
@@ -83,8 +91,8 @@ namespace LeMansUltimateCoPilot.Models
         public float SuspensionVelocityRR { get; set; }
 
         // Aerodynamics and vehicle setup
-        public float FrontDownforce { get; set; }
-        public float RearDownforce { get; set; }
+        public float FrontDownforce { get; set; } // Not available in Le Mans Ultimate
+        public float RearDownforce { get; set; } // Not available in Le Mans Ultimate
         public float Drag { get; set; }
         public float FrontRideHeight { get; set; }
         public float RearRideHeight { get; set; }
@@ -151,13 +159,13 @@ namespace LeMansUltimateCoPilot.Models
                 // Forces
                 SteeringTorque = (float)vehicle.mSteeringShaftTorque,
 
-                // Temperatures
-                WaterTemperature = (float)vehicle.mEngineWaterTemp,
-                OilTemperature = (float)vehicle.mEngineOilTemp,
+                // Temperatures (engine temps not available in Le Mans Ultimate)
+                WaterTemperature = (float)vehicle.mEngineWaterTemp, // Will be 0.0
+                OilTemperature = (float)vehicle.mEngineOilTemp, // Will be 0.0
 
-                // Aerodynamics
-                FrontDownforce = (float)vehicle.mFrontDownforce,
-                RearDownforce = (float)vehicle.mRearDownforce,
+                // Aerodynamics (not available in Le Mans Ultimate)
+                FrontDownforce = (float)vehicle.mFrontDownforce, // Will be 0.0
+                RearDownforce = (float)vehicle.mRearDownforce, // Will be 0.0
                 Drag = (float)vehicle.mDrag,
                 FrontRideHeight = (float)vehicle.mFrontRideHeight,
                 RearRideHeight = (float)vehicle.mRearRideHeight,
@@ -177,6 +185,15 @@ namespace LeMansUltimateCoPilot.Models
             data.SpeedMPS = (float)Math.Sqrt(data.VelocityX * data.VelocityX + data.VelocityZ * data.VelocityZ);
             data.Speed = data.SpeedMPS * 3.6f; // Convert to km/h
 
+            // Debug output for telemetry conversion
+            Console.WriteLine($"🔍 Raw velocities: X={data.VelocityX:F3}, Y={data.VelocityY:F3}, Z={data.VelocityZ:F3}");
+            Console.WriteLine($"🔍 Speed calculation: MPS={data.SpeedMPS:F3}, KMH={data.Speed:F3}");
+            Console.WriteLine($"🔍 Engine temps: Water={data.WaterTemperature:F1}°C, Oil={data.OilTemperature:F1}°C");
+            Console.WriteLine($"🔍 Raw engine temps: Water={vehicle.mEngineWaterTemp:F1}, Oil={vehicle.mEngineOilTemp:F1}");
+            Console.WriteLine($"🔍 Downforce: Front={data.FrontDownforce:F1}, Rear={data.RearDownforce:F1}");
+            Console.WriteLine($"🔍 Raw downforce: Front={vehicle.mFrontDownforce:F1}, Rear={vehicle.mRearDownforce:F1}");
+            Console.WriteLine($"🔍 Fuel: {data.FuelLevel:F2}L, Gear: {data.Gear}");
+
             // Calculate G-forces (assuming acceleration is in m/s²)
             data.LongitudinalG = data.AccelerationZ / 9.81f; // Forward/backward
             data.LateralG = data.AccelerationX / 9.81f; // Left/right
@@ -186,10 +203,20 @@ namespace LeMansUltimateCoPilot.Models
             if (vehicle.mWheels != null && vehicle.mWheels.Length >= 4)
             {
                 // FL, FR, RL, RR (Front Left, Front Right, Rear Left, Rear Right)
-                data.TireTemperatureFL = (float)(vehicle.mWheels[0].mTemperature?[1] ?? 0); // Center temperature
-                data.TireTemperatureFR = (float)(vehicle.mWheels[1].mTemperature?[1] ?? 0);
-                data.TireTemperatureRL = (float)(vehicle.mWheels[2].mTemperature?[1] ?? 0);
-                data.TireTemperatureRR = (float)(vehicle.mWheels[3].mTemperature?[1] ?? 0);
+                // Use carcass temperature as primary source (more accurate than surface temperature)
+                data.TireTemperatureFL = (float)vehicle.mWheels[0].mTireCarcassTemperature;
+                data.TireTemperatureFR = (float)vehicle.mWheels[1].mTireCarcassTemperature;
+                data.TireTemperatureRL = (float)vehicle.mWheels[2].mTireCarcassTemperature;
+                data.TireTemperatureRR = (float)vehicle.mWheels[3].mTireCarcassTemperature;
+
+                // Debug output for all available tire temperature readings
+                Console.WriteLine($"🔍 Tire temp indices [L/C/R]: FL=[{vehicle.mWheels[0].mTemperature?[0]:F1}/{vehicle.mWheels[0].mTemperature?[1]:F1}/{vehicle.mWheels[0].mTemperature?[2]:F1}]K");
+                Console.WriteLine($"🔍 Tire temp indices [L/C/R]: FR=[{vehicle.mWheels[1].mTemperature?[0]:F1}/{vehicle.mWheels[1].mTemperature?[1]:F1}/{vehicle.mWheels[1].mTemperature?[2]:F1}]K");
+                Console.WriteLine($"🔍 Tire temp indices [L/C/R]: RL=[{vehicle.mWheels[2].mTemperature?[0]:F1}/{vehicle.mWheels[2].mTemperature?[1]:F1}/{vehicle.mWheels[2].mTemperature?[2]:F1}]K");
+                Console.WriteLine($"🔍 Tire temp indices [L/C/R]: RR=[{vehicle.mWheels[3].mTemperature?[0]:F1}/{vehicle.mWheels[3].mTemperature?[1]:F1}/{vehicle.mWheels[3].mTemperature?[2]:F1}]K");
+                Console.WriteLine($"🔍 Tire carcass temps: FL={vehicle.mWheels[0].mTireCarcassTemperature:F1}K, FR={vehicle.mWheels[1].mTireCarcassTemperature:F1}K, RL={vehicle.mWheels[2].mTireCarcassTemperature:F1}K, RR={vehicle.mWheels[3].mTireCarcassTemperature:F1}K");
+                Console.WriteLine($"🔍 Tire inner layer temps: FL={vehicle.mWheels[0].mTireInnerLayerTemperature?[1]:F1}K, FR={vehicle.mWheels[1].mTireInnerLayerTemperature?[1]:F1}K, RL={vehicle.mWheels[2].mTireInnerLayerTemperature?[1]:F1}K, RR={vehicle.mWheels[3].mTireInnerLayerTemperature?[1]:F1}K");
+                Console.WriteLine($"🔍 Using carcass temps (K): FL={data.TireTemperatureFL:F1}, FR={data.TireTemperatureFR:F1}, RL={data.TireTemperatureRL:F1}, RR={data.TireTemperatureRR:F1}");
 
                 // Convert from Kelvin to Celsius
                 data.TireTemperatureFL = data.TireTemperatureFL > 0 ? (float)(data.TireTemperatureFL - 273.15) : 0;
@@ -197,17 +224,40 @@ namespace LeMansUltimateCoPilot.Models
                 data.TireTemperatureRL = data.TireTemperatureRL > 0 ? (float)(data.TireTemperatureRL - 273.15) : 0;
                 data.TireTemperatureRR = data.TireTemperatureRR > 0 ? (float)(data.TireTemperatureRR - 273.15) : 0;
 
+                Console.WriteLine($"🔍 Tire temps (°C): FL={data.TireTemperatureFL:F1}, FR={data.TireTemperatureFR:F1}, RL={data.TireTemperatureRL:F1}, RR={data.TireTemperatureRR:F1}");
+
                 // Tire pressure (already in kPa)
                 data.TirePressureFL = (float)vehicle.mWheels[0].mPressure;
                 data.TirePressureFR = (float)vehicle.mWheels[1].mPressure;
                 data.TirePressureRL = (float)vehicle.mWheels[2].mPressure;
                 data.TirePressureRR = (float)vehicle.mWheels[3].mPressure;
 
-                // Tire load (Newtons)
+                Console.WriteLine($"🔍 Tire pressures: FL={data.TirePressureFL:F1}, FR={data.TirePressureFR:F1}, RL={data.TirePressureRL:F1}, RR={data.TirePressureRR:F1}");
+
+                // Tire load (not available in Le Mans Ultimate - will be 0.0)
                 data.TireLoadFL = (float)vehicle.mWheels[0].mTireLoad;
                 data.TireLoadFR = (float)vehicle.mWheels[1].mTireLoad;
                 data.TireLoadRL = (float)vehicle.mWheels[2].mTireLoad;
                 data.TireLoadRR = (float)vehicle.mWheels[3].mTireLoad;
+
+                // Working alternatives - brake temperatures (in Kelvin)
+                data.BrakeTemperatureFL = (float)vehicle.mWheels[0].mBrakeTemp;
+                data.BrakeTemperatureFR = (float)vehicle.mWheels[1].mBrakeTemp;
+                data.BrakeTemperatureRL = (float)vehicle.mWheels[2].mBrakeTemp;
+                data.BrakeTemperatureRR = (float)vehicle.mWheels[3].mBrakeTemp;
+
+                // Working alternatives - suspension forces (in Newtons)
+                data.SuspensionForceFL = (float)vehicle.mWheels[0].mSuspForce;
+                data.SuspensionForceFR = (float)vehicle.mWheels[1].mSuspForce;
+                data.SuspensionForceRL = (float)vehicle.mWheels[2].mSuspForce;
+                data.SuspensionForceRR = (float)vehicle.mWheels[3].mSuspForce;
+
+                Console.WriteLine($"🔍 Tire loads: FL={data.TireLoadFL:F1}, FR={data.TireLoadFR:F1}, RL={data.TireLoadRL:F1}, RR={data.TireLoadRR:F1}");
+                Console.WriteLine($"🔍 Raw tire loads: FL={vehicle.mWheels[0].mTireLoad:F1}, FR={vehicle.mWheels[1].mTireLoad:F1}, RL={vehicle.mWheels[2].mTireLoad:F1}, RR={vehicle.mWheels[3].mTireLoad:F1}");
+                Console.WriteLine($"🔍 Brake temps: FL={vehicle.mWheels[0].mBrakeTemp:F1}, FR={vehicle.mWheels[1].mBrakeTemp:F1}, RL={vehicle.mWheels[2].mBrakeTemp:F1}, RR={vehicle.mWheels[3].mBrakeTemp:F1}");
+                Console.WriteLine($"🔍 Susp forces: FL={vehicle.mWheels[0].mSuspForce:F1}, FR={vehicle.mWheels[1].mSuspForce:F1}, RL={vehicle.mWheels[2].mSuspForce:F1}, RR={vehicle.mWheels[3].mSuspForce:F1}");
+                Console.WriteLine($"🔍 Lateral forces: FL={vehicle.mWheels[0].mLateralForce:F1}, FR={vehicle.mWheels[1].mLateralForce:F1}, RL={vehicle.mWheels[2].mLateralForce:F1}, RR={vehicle.mWheels[3].mLateralForce:F1}");
+                Console.WriteLine($"🔍 Electric temps: Motor={vehicle.mElectricBoostMotorTemperature:F1}, Water={vehicle.mElectricBoostWaterTemperature:F1}");
 
                 // Tire grip fraction
                 data.TireGripFL = (float)vehicle.mWheels[0].mGripFract;
@@ -247,10 +297,11 @@ namespace LeMansUltimateCoPilot.Models
                    "ThrottleInput,BrakeInput,SteeringInput,ClutchInput," +
                    "UnfilteredThrottle,UnfilteredBrake,UnfilteredSteering,UnfilteredClutch," +
                    "LongitudinalG,LateralG,VerticalG,SteeringTorque," +
-                   "WaterTemperature,OilTemperature," +
+                   "WaterTemperature,OilTemperature,BrakeTemperatureFL,BrakeTemperatureFR,BrakeTemperatureRL,BrakeTemperatureRR," +
                    "TireTemperatureFL,TireTemperatureFR,TireTemperatureRL,TireTemperatureRR," +
                    "TirePressureFL,TirePressureFR,TirePressureRL,TirePressureRR," +
                    "TireLoadFL,TireLoadFR,TireLoadRL,TireLoadRR," +
+                   "SuspensionForceFL,SuspensionForceFR,SuspensionForceRL,SuspensionForceRR," +
                    "TireGripFL,TireGripFR,TireGripRL,TireGripRR," +
                    "SuspensionDeflectionFL,SuspensionDeflectionFR,SuspensionDeflectionRL,SuspensionDeflectionRR," +
                    "SuspensionVelocityFL,SuspensionVelocityFR,SuspensionVelocityRL,SuspensionVelocityRR," +
@@ -277,9 +328,11 @@ namespace LeMansUltimateCoPilot.Models
                    $"{UnfilteredThrottle.ToString("F4", culture)},{UnfilteredBrake.ToString("F4", culture)},{UnfilteredSteering.ToString("F4", culture)},{UnfilteredClutch.ToString("F4", culture)}," +
                    $"{LongitudinalG.ToString("F3", culture)},{LateralG.ToString("F3", culture)},{VerticalG.ToString("F3", culture)},{SteeringTorque.ToString("F3", culture)}," +
                    $"{WaterTemperature.ToString("F1", culture)},{OilTemperature.ToString("F1", culture)}," +
+                   $"{BrakeTemperatureFL.ToString("F1", culture)},{BrakeTemperatureFR.ToString("F1", culture)},{BrakeTemperatureRL.ToString("F1", culture)},{BrakeTemperatureRR.ToString("F1", culture)}," +
                    $"{TireTemperatureFL.ToString("F1", culture)},{TireTemperatureFR.ToString("F1", culture)},{TireTemperatureRL.ToString("F1", culture)},{TireTemperatureRR.ToString("F1", culture)}," +
                    $"{TirePressureFL.ToString("F1", culture)},{TirePressureFR.ToString("F1", culture)},{TirePressureRL.ToString("F1", culture)},{TirePressureRR.ToString("F1", culture)}," +
                    $"{TireLoadFL.ToString("F1", culture)},{TireLoadFR.ToString("F1", culture)},{TireLoadRL.ToString("F1", culture)},{TireLoadRR.ToString("F1", culture)}," +
+                   $"{SuspensionForceFL.ToString("F1", culture)},{SuspensionForceFR.ToString("F1", culture)},{SuspensionForceRL.ToString("F1", culture)},{SuspensionForceRR.ToString("F1", culture)}," +
                    $"{TireGripFL.ToString("F3", culture)},{TireGripFR.ToString("F3", culture)},{TireGripRL.ToString("F3", culture)},{TireGripRR.ToString("F3", culture)}," +
                    $"{SuspensionDeflectionFL.ToString("F4", culture)},{SuspensionDeflectionFR.ToString("F4", culture)},{SuspensionDeflectionRL.ToString("F4", culture)},{SuspensionDeflectionRR.ToString("F4", culture)}," +
                    $"{SuspensionVelocityFL.ToString("F4", culture)},{SuspensionVelocityFR.ToString("F4", culture)},{SuspensionVelocityRL.ToString("F4", culture)},{SuspensionVelocityRR.ToString("F4", culture)}," +
